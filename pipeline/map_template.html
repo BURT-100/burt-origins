@@ -113,6 +113,8 @@ h2 { font: 600 var(--step-2)/1.1 var(--font-display); text-transform: uppercase;
 }
 
 .rail { display: grid; gap: 20px; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 18px; }
+/* Grid children default to their content's width; let the town table scroll inside the panel instead. */
+.rail > * { min-width: 0; }
 .rail-head { display: grid; gap: 2px; }
 .rail-title { font: 600 var(--step-2)/1 var(--font-display); text-transform: uppercase; letter-spacing: 0.02em; }
 .rail-sub { font-size: var(--step--1); color: var(--muted); }
@@ -161,6 +163,8 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; }
 .tbl-wrap { overflow-x: auto; margin-top: 8px; }
 table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
 th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+td:first-child { white-space: normal; }
+@media (max-width: 480px) { #town-table th:nth-child(2), #town-table td:nth-child(2) { display: none; } }
 th { font: 500 0.6875rem var(--font-data); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 td.n { text-align: right; font-family: var(--font-data); }
 

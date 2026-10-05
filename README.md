@@ -25,6 +25,10 @@ gh workflow run refresh.yml
 After race day, run the full pipeline locally to pull results (it needs `.burt_key`, the same
 value as the `BURT_KEY_SECRET` repo secret, to hash runner names for the returning-runner count).
 
+Before the race, always run the local pipeline with `--refresh` (and `git pull` first): without
+it, the local entrant snapshot may be older than what the Action committed, and the rebuild would
+roll the upcoming edition back.
+
 To pull the latest entrant list yourself and republish:
 
 ```sh
