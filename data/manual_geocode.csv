@@ -1,0 +1,4 @@
+raw_city,raw_state,city,state,lat,lon,county_fips,note
+La Center,AL,La Center,WA,,,,"No La Center in AL; La Center, WA (Clark Co.) almost certainly intended"
+Port Moody,BC,Port Moody,BC,49.2838,-122.8317,,Canada - not in US gazetteer
+Kamloops,BC,Kamloops,BC,50.6745,-120.3273,,Canada - not in US gazetteer

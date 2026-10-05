@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+.DS_Store
+.claude/
+
+# Contains runner names; the public repo publishes town-level data only.
+data/raw/
+data/runners.csv
+data/runners_geo.csv
+data/unmatched.csv
+
+# Large reference downloads; re-fetch with pipeline/fetch_ref.sh
+data/ref/us_places.tsv
+data/ref/cb_county_500k.zip

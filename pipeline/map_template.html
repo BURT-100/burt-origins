@@ -1,0 +1,520 @@
+<meta charset="utf-8">
+<title>BURT 100 Runner Origins</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: masthead + filter bar, then map (wide) beside a stats rail, then a full-width
+   "every trip" strip chart. Island-map palette: paper land, slate water, evergreen controls,
+   and one amber-to-rust ramp that darkens (light) / brightens (dark) with distance from home. */
+:root {
+  --bg: #f3f5f4;
+  --panel: #fbfcfb;
+  --fg: #17201f;
+  --muted: #59625f;
+  --rule: #d5dbd8;
+  --land: #e9ece7;
+  --land-line: #c3cac5;
+  --water: #cfdee5;
+  --accent: #1f5a4a;
+  --accent-ink: #ffffff;
+  --r1: #e3a04a; --r2: #d17f35; --r3: #b9602a; --r4: #924222; --r5: #652a18;
+  --font-display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --step--1: 0.8125rem; --step-0: 0.9375rem; --step-1: 1.125rem; --step-2: 1.5rem;
+  --step-3: 2.25rem; --step-4: clamp(2.5rem, 6vw, 3.75rem);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111617; --panel: #161c1d; --fg: #e6ebe9; --muted: #9aa5a2; --rule: #2b3436;
+    --land: #1f2728; --land-line: #3a4547; --water: #0c1214; --accent: #74c4a8; --accent-ink: #0d1a16;
+    --r1: #7a3a20; --r2: #a5502a; --r3: #cc6c34; --r4: #e68d48; --r5: #f5b569;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111617; --panel: #161c1d; --fg: #e6ebe9; --muted: #9aa5a2; --rule: #2b3436;
+  --land: #1f2728; --land-line: #3a4547; --water: #0c1214; --accent: #74c4a8; --accent-ink: #0d1a16;
+  --r1: #7a3a20; --r2: #a5502a; --r3: #cc6c34; --r4: #e68d48; --r5: #f5b569;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 400 var(--step-0)/1.5 var(--font-body); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: max(16px, 3vw); padding-block: 28px 56px;
+  display: grid; gap: 28px; }
+
+header { display: grid; gap: 10px; }
+.eyebrow { font: 500 var(--step--1)/1.3 var(--font-data); color: var(--muted); letter-spacing: 0.04em; }
+h1 { font: 700 var(--step-4)/0.95 var(--font-display); text-transform: uppercase; letter-spacing: 0.01em;
+  margin: 0; text-wrap: balance; }
+.lede { margin: 0; max-width: 64ch; color: var(--muted); }
+h2 { font: 600 var(--step-2)/1.1 var(--font-display); text-transform: uppercase; letter-spacing: 0.02em; margin: 0; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: end;
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg);
+  padding-block: 10px; border-bottom: 1px solid var(--rule); }
+.ctl { display: grid; gap: 6px; }
+.ctl-label { font: 500 0.6875rem/1 var(--font-data); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; background: var(--panel); }
+.seg button { font: 600 var(--step-1)/1 var(--font-display); letter-spacing: 0.03em; color: var(--fg);
+  background: none; border: 0; padding: 8px 13px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.seg button:focus-visible, .chk input:focus-visible, .linkbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.toggles { display: flex; gap: 16px; flex-wrap: wrap; padding-bottom: 6px; }
+.chk { display: inline-flex; gap: 6px; align-items: center; font-size: var(--step--1); cursor: pointer; }
+.chk input { accent-color: var(--accent); }
+
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; }
+@media (max-width: 900px) { .main { grid-template-columns: minmax(0, 1fr); } }
+
+.mapbox { position: relative; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--water); }
+.mapbox svg { display: block; width: 100%; height: auto; touch-action: none; cursor: grab; }
+.mapbox svg:active { cursor: grabbing; }
+.land { fill: var(--land); stroke: var(--land-line); stroke-width: 0.6; vector-effect: non-scaling-stroke; }
+.land.home { fill: color-mix(in oklab, var(--land), var(--r1) 14%); }
+.state-line { fill: none; stroke: var(--land-line); stroke-width: 0.9; vector-effect: non-scaling-stroke; }
+.trip { fill: none; stroke: var(--fg); stroke-opacity: 0.22; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.town { stroke: var(--panel); stroke-width: 2; cursor: pointer; }
+.town:hover { stroke: var(--fg); }
+.town-label { font: 500 11.5px/1 var(--font-body); fill: var(--fg); paint-order: stroke; stroke: var(--land);
+  stroke-width: 3.5px; stroke-linejoin: round; pointer-events: none; }
+.start-mark { fill: var(--accent); stroke: var(--panel); stroke-width: 2; }
+.start-label { font: 600 12px/1 var(--font-data); fill: var(--accent); paint-order: stroke; stroke: var(--land);
+  stroke-width: 4px; stroke-linejoin: round; pointer-events: none; }
+.mapbar { position: absolute; left: 10px; right: 10px; top: 10px; display: flex; flex-wrap: wrap; gap: 8px;
+  justify-content: space-between; align-items: start; pointer-events: none; }
+.mapbar > * { pointer-events: auto; }
+.mapbar .seg button { font-size: var(--step-0); padding: 7px 10px; }
+.offview { font-size: var(--step--1); background: var(--panel); border: 1px solid var(--rule); border-radius: 6px;
+  padding: 6px 10px; }
+.linkbtn { font: inherit; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 2px; font-weight: 600; }
+.maplegend { position: absolute; left: 10px; bottom: 10px; background: var(--panel); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 8px 10px; display: grid; gap: 4px; font-size: 0.75rem; }
+.maplegend .row { display: flex; gap: 7px; align-items: center; }
+.sw { width: 11px; height: 11px; border-radius: 50%; flex: none; }
+@media (max-width: 560px) { .maplegend { display: none; } }
+
+.rail { display: grid; gap: 20px; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 18px; }
+.rail-head { display: grid; gap: 2px; }
+.rail-title { font: 600 var(--step-2)/1 var(--font-display); text-transform: uppercase; letter-spacing: 0.02em; }
+.rail-sub { font-size: var(--step--1); color: var(--muted); }
+.figs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; }
+.fig { display: grid; gap: 2px; min-width: 0; }
+.fig b { font: 600 var(--step-3)/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.fig b small { font-size: var(--step-1); font-weight: 500; color: var(--muted); margin-left: 2px; }
+.fig span { font-size: 0.75rem; color: var(--muted); }
+.regions { display: grid; gap: 7px; }
+.reg { display: grid; grid-template-columns: 112px minmax(0, 1fr) 70px; gap: 8px; align-items: center; font-size: var(--step--1); }
+.reg .bar { height: 10px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.reg .bar i { display: block; height: 100%; border-radius: 0 3px 3px 0; }
+.reg .v { font-family: var(--font-data); font-size: 0.75rem; text-align: right; font-variant-numeric: tabular-nums; }
+.towns { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: var(--step--1); }
+.towns li { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dotted var(--rule); padding-bottom: 3px; }
+.towns li span:last-child { font-family: var(--font-data); font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sec-label { font: 500 0.6875rem/1 var(--font-data); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+.strip-sec { display: grid; gap: 10px; }
+.strip-sec p { margin: 0; color: var(--muted); max-width: 70ch; }
+.strip-scroll { overflow-x: auto; border: 1px solid var(--rule); border-radius: 8px; background: var(--panel); }
+.strip-scroll svg { display: block; min-width: 640px; width: 100%; height: auto; }
+.axis text, .rowlabel { font: 400 11px var(--font-data); fill: var(--muted); }
+.rowlabel.dist { font: 600 15px var(--font-display); fill: var(--fg); letter-spacing: 0.03em; }
+.grid line { stroke: var(--rule); }
+.dot { stroke: var(--panel); stroke-width: 1.5; }
+.med { stroke: var(--fg); stroke-width: 2; }
+.medlabel { font: 500 10.5px var(--font-data); fill: var(--fg); }
+.row-off { opacity: 0.22; }
+
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 24px; }
+.notes section { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.notes ul { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; }
+.notes p { margin: 0; }
+.small { font-size: var(--step--1); color: var(--muted); }
+details { font-size: var(--step--1); }
+details summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+.tbl-wrap { overflow-x: auto; margin-top: 8px; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th { font: 500 0.6875rem var(--font-data); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+td.n { text-align: right; font-family: var(--font-data); }
+
+#tip { position: fixed; z-index: 20; pointer-events: none; background: var(--panel); color: var(--fg);
+  border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; font-size: var(--step--1); line-height: 1.35;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.14); max-width: 260px; }
+#tip b { font-weight: 600; }
+#tip .m { font-family: var(--font-data); font-size: 0.75rem; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">BURT 100 · Bainbridge Island, WA · Start/finish: Battle Point Park · Held each February</div>
+    <h1>Where BURT runners come from</h1>
+    <p class="lede">Every entrant's hometown from UltraSignup results, 2023–2026, measured as a straight-line distance to the start line. Pick a year and a distance to see how far the field travels.</p>
+  </header>
+
+  <div class="controls" role="group" aria-label="Filters">
+    <div class="ctl"><span class="ctl-label" id="lbl-year">Race year</span>
+      <div class="seg" id="year" aria-labelledby="lbl-year"></div></div>
+    <div class="ctl"><span class="ctl-label" id="lbl-dist">Distance</span>
+      <div class="seg" id="dist" aria-labelledby="lbl-dist"></div></div>
+    <div class="toggles">
+      <label class="chk"><input type="checkbox" id="opt-lines" checked> Lines to the start</label>
+      <label class="chk"><input type="checkbox" id="opt-dns" checked> Include non-starters (DNS)</label>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="mapbox">
+      <svg id="map" viewBox="0 0 960 720" role="img" aria-label="Map of entrant hometowns"></svg>
+      <div class="mapbar">
+        <div class="seg" id="view" aria-label="Map view"></div>
+        <div class="offview" id="offview" hidden></div>
+      </div>
+      <div class="maplegend" id="maplegend"></div>
+    </div>
+
+    <aside class="rail" aria-live="polite">
+      <div class="rail-head">
+        <div class="rail-title" id="rail-title"></div>
+        <div class="rail-sub" id="rail-sub"></div>
+      </div>
+      <div class="figs" id="figs"></div>
+      <div class="regions-wrap" style="display:grid;gap:8px">
+        <div class="sec-label">Where they live</div>
+        <div class="regions" id="regions"></div>
+      </div>
+      <div style="display:grid;gap:8px">
+        <div class="sec-label">Top towns</div>
+        <ul class="towns" id="towns"></ul>
+      </div>
+      <details>
+        <summary>All towns for this filter</summary>
+        <div class="tbl-wrap"><table id="town-table"></table></div>
+      </details>
+    </aside>
+  </div>
+
+  <section class="strip-sec">
+    <h2>Every trip, by distance and year</h2>
+    <p>One dot per entrant, on a log scale so the island and the far travelers both fit. The black tick marks the median trip. Rows outside your current filter are dimmed.</p>
+    <div class="strip-scroll"><svg id="strip" role="img" aria-label="Travel distance of every entrant by race and year"></svg></div>
+  </section>
+
+  <div class="notes">
+    <section>
+      <h2>What the data says</h2>
+      <ul id="findings"></ul>
+    </section>
+    <section>
+      <h2>About the data</h2>
+      <ul class="small">
+        <li>Source: UltraSignup results for each BURT 100 distance. 2023 was a 55K-only year on UltraSignup, and no earlier editions are listed.</li>
+        <li>An entrant is anyone in the results: finishers, DNFs and, unless you turn them off, registered non-starters.</li>
+        <li>Hometown is what the runner entered at registration. Distances run from the town's center to Battle Point Park, so island runners all show about 3 miles.</li>
+        <li>Counts are by town only. No runner names are shown.</li>
+      </ul>
+    </section>
+  </div>
+</div>
+<div id="tip" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script>
+const DATA = /*__DATA__*/null;
+const RACE = [-122.5463, 47.6683];
+const REGIONS = ["Bainbridge Island", "Kitsap County", "King County", "Other WA", "Out of state"];
+const REGION_SHORT = {"Bainbridge Island": "Bainbridge", "Kitsap County": "Rest of Kitsap", "King County": "King County",
+  "Other WA": "Rest of WA", "Out of state": "Out of state"};
+const DISTS = ["55K", "110K", "100M"];
+const YEARS = [...new Set(DATA.runners.map(r => r.y))].sort();
+const VIEWS = {
+  puget: {label: "Puget Sound", box: [[-123.2, 46.95], [-121.85, 48.15]]},
+  nw: {label: "Northwest", box: [[-125.2, 43.2], [-113.2, 51.0]]},
+  na: {label: "North America", box: [[-160, 18.5], [-79, 52]]},
+};
+const VIEW_ORDER = ["puget", "nw", "na"];
+const regionVar = r => `var(--r${REGIONS.indexOf(r) + 1})`;
+const fmtMi = m => m >= 100 ? d3.format(",.0f")(m) : d3.format(".1f")(m);
+const pct = (a, b) => b ? Math.round(100 * a / b) : 0;
+
+const state = {year: Math.max(...YEARS), dist: "All", lines: true, dns: true, view: "puget"};
+try { const s = JSON.parse(localStorage.getItem("burt-origins") || "null"); if (s) Object.assign(state, s); } catch (e) {}
+function save() { try { localStorage.setItem("burt-origins", JSON.stringify(state)); } catch (e) {} }
+
+function match(r, s = state) {
+  return (s.year === "all" || r.y === s.year) && (s.dist === "All" || r.d === s.dist) && (s.dns || r.status !== "DNS");
+}
+const filtered = () => DATA.runners.filter(r => match(r));
+
+/* ---------- controls ---------- */
+function seg(el, items, key, onPick) {
+  el.innerHTML = "";
+  for (const [val, label] of items) {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = label; b.dataset.v = String(val);
+    b.addEventListener("click", () => { onPick(val); });
+    el.appendChild(b);
+  }
+  return () => el.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === String(state[key])));
+}
+const syncYear = seg(document.getElementById("year"), [...YEARS.map(y => [y, y]), ["all", "All years"]], "year",
+  v => { state.year = v; update(); });
+const syncDist = seg(document.getElementById("dist"), [["All", "All"], ...DISTS.map(d => [d, d])], "dist",
+  v => { state.dist = v; update(); });
+const syncView = seg(document.getElementById("view"), VIEW_ORDER.map(k => [k, VIEWS[k].label]), "view",
+  v => { state.view = v; zoomTo(v, true); save(); syncView(); });
+const optLines = document.getElementById("opt-lines"), optDns = document.getElementById("opt-dns");
+optLines.checked = state.lines; optDns.checked = state.dns;
+optLines.addEventListener("change", () => { state.lines = optLines.checked; update(); });
+optDns.addEventListener("change", () => { state.dns = optDns.checked; update(); });
+
+/* ---------- tooltip ---------- */
+const tip = document.getElementById("tip");
+function showTip(ev, html) {
+  tip.innerHTML = html; tip.hidden = false;
+  const pad = 14, w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = ev.clientX + pad, y = ev.clientY + pad;
+  if (x + w > innerWidth - 8) x = ev.clientX - w - pad;
+  if (y + h > innerHeight - 8) y = ev.clientY - h - pad;
+  tip.style.left = Math.max(8, x) + "px"; tip.style.top = Math.max(8, y) + "px";
+}
+const hideTip = () => { tip.hidden = true; };
+
+/* ---------- map ---------- */
+const W = 960, H = 720;
+const svg = d3.select("#map");
+const proj = d3.geoMercator().fitExtent([[0, 0], [W, H]], boxFeature(VIEWS.na.box));
+const path = d3.geoPath(proj);
+const gWorld = svg.append("g");
+const gTrips = svg.append("g");
+const gLabels = svg.append("g");
+const gTowns = svg.append("g");
+const gStart = svg.append("g");
+let zt = d3.zoomIdentity;
+
+function boxFeature([[x0, y0], [x1, y1]]) {
+  return {type: "Feature", geometry: {type: "MultiPoint", coordinates: [[x0, y0], [x1, y1]]}};
+}
+svg.insert("rect", ":first-child").attr("width", W).attr("height", H).attr("fill", "var(--water)");
+
+const countries = topojson.feature(DATA.world, DATA.world.objects.countries).features.filter(f => f.id !== "840");
+const states = topojson.feature(DATA.us, DATA.us.objects.states).features;
+gWorld.selectAll(".c").data(countries).join("path").attr("class", "land").attr("d", path);
+gWorld.selectAll(".s").data(states).join("path").attr("class", "land").attr("d", path);
+gWorld.selectAll(".wa").data(DATA.wa.features).join("path")
+  .attr("class", d => "land" + (d.properties.fips === "035" ? " home" : "")).attr("d", path);
+
+const startXY = proj(RACE);
+gStart.append("path").attr("class", "start-mark").attr("d", d3.symbol(d3.symbolStar, 210)());
+gStart.append("text").attr("class", "start-label").attr("x", 12).attr("y", -10).text("START · Battle Point Park");
+
+const zoom = d3.zoom().scaleExtent([1, 600]).translateExtent([[-W, -H], [2 * W, 2 * H]])
+  .on("zoom", ev => { zt = ev.transform; placeMarks(); })
+  .on("end", ev => { if (ev.sourceEvent) { state.view = null; syncView(); } });
+svg.call(zoom).on("dblclick.zoom", null);
+
+function viewTransform(key) {
+  const [[x0, y0], [x1, y1]] = VIEWS[key].box.map(p => proj(p));
+  const minX = Math.min(x0, x1), maxX = Math.max(x0, x1), minY = Math.min(y0, y1), maxY = Math.max(y0, y1);
+  const k = Math.min(W / (maxX - minX), H / (maxY - minY));
+  return d3.zoomIdentity.translate(W / 2 - k * (minX + maxX) / 2, H / 2 - k * (minY + maxY) / 2).scale(k);
+}
+function zoomTo(key, animate) {
+  const t = viewTransform(key);
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (animate && !reduce) svg.transition().duration(900).call(zoom.transform, t);
+  else svg.call(zoom.transform, t);
+}
+
+const rScale = d3.scaleSqrt().domain([1, 54]).range([4.5, 22]);
+let towns = [];
+
+function aggregate(rows) {
+  const m = new Map();
+  for (const r of rows) {
+    const key = r.town + "|" + r.st;
+    if (!m.has(key)) m.set(key, {key, town: r.town, st: r.st, lat: r.lat, lon: r.lon, region: r.region, mi: r.mi,
+      n: 0, byDist: {}, byStatus: {}});
+    const t = m.get(key);
+    t.n++; t.byDist[r.d] = (t.byDist[r.d] || 0) + 1; t.byStatus[r.status] = (t.byStatus[r.status] || 0) + 1;
+  }
+  return [...m.values()].sort((a, b) => b.n - a.n || a.mi - b.mi);
+}
+
+function townTip(t) {
+  const dists = DISTS.filter(d => t.byDist[d]).map(d => `${d} ${t.byDist[d]}`).join(" · ");
+  const st = ["finished", "DNF", "DNS"].filter(s => t.byStatus[s]).map(s => `${t.byStatus[s]} ${s === "finished" ? "finished" : s}`).join(" · ");
+  return `<b>${t.town}, ${t.st}</b><br>${t.n} entrant${t.n > 1 ? "s" : ""} · ${fmtMi(t.mi)} mi to start<br>` +
+    `<span class="m">${dists}<br>${st}</span>`;
+}
+
+function drawMap(rows) {
+  towns = aggregate(rows);
+  gTrips.selectAll("path").data(state.lines ? towns.filter(t => t.region !== "Bainbridge Island") : [], d => d.key)
+    .join("path").attr("class", "trip")
+    .attr("d", d => path({type: "LineString", coordinates: [[d.lon, d.lat], RACE]}));
+  gTowns.selectAll("circle").data(towns, d => d.key).join("circle")
+    .attr("class", "town").attr("r", d => rScale(d.n)).attr("fill", d => regionVar(d.region))
+    .on("pointermove", (ev, d) => showTip(ev, townTip(d))).on("pointerleave", hideTip)
+    .on("click", (ev, d) => showTip(ev, townTip(d)));
+  // Bigger circles first so small ones stay on top.
+  gTowns.selectAll("circle").sort((a, b) => b.n - a.n);
+  placeMarks();
+}
+
+function placeMarks() {
+  gWorld.attr("transform", zt); gTrips.attr("transform", zt);
+  gStart.attr("transform", `translate(${zt.apply(startXY)})`);
+  const pos = d => zt.apply(proj([d.lon, d.lat]));
+  gTowns.selectAll("circle").attr("cx", d => pos(d)[0]).attr("cy", d => pos(d)[1]);
+  // Off-view count
+  const inView = d => { const [x, y] = pos(d); return x >= 0 && x <= W && y >= 0 && y <= H; };
+  const out = towns.filter(d => !inView(d));
+  const nOut = d3.sum(out, d => d.n), off = document.getElementById("offview");
+  if (nOut) {
+    const next = VIEW_ORDER.find(k => {
+      const t = viewTransform(k);
+      return out.every(d => { const [x, y] = t.apply(proj([d.lon, d.lat])); return x >= 0 && x <= W && y >= 0 && y <= H; });
+    });
+    off.innerHTML = `${nOut} entrant${nOut > 1 ? "s" : ""} from beyond this view. ` +
+      (next ? `<button type="button" class="linkbtn" id="zoomout">Show ${VIEWS[next].label}</button>` : "");
+    off.hidden = false;
+    const btn = document.getElementById("zoomout");
+    if (btn) btn.onclick = () => { state.view = next; syncView(); zoomTo(next, true); save(); };
+  } else off.hidden = true;
+  // Labels: towns with 2+ entrants, or the 8 largest, that are in view and not crowded.
+  const cands = towns.filter((d, i) => (d.n >= 2 || i < 8) && inView(d));
+  // Obstacles: the start label, then every circle, so labels never sit on a dot.
+  const [sx, sy] = zt.apply(startXY);
+  const placed = [[sx - 8, sy - 22, sx + 12 + 172, sy + 8]];
+  for (const d of towns) { const [x, y] = pos(d), r = rScale(d.n); placed.push([x - r, y - r, x + r, y + r]); }
+  const hits = box => placed.some(b => !(box[2] < b[0] || box[0] > b[2] || box[3] < b[1] || box[1] > b[3]));
+  const labels = [];
+  for (const d of cands) {
+    const [x, y] = pos(d), r = rScale(d.n), w = d.town.length * 6.6;
+    const right = [x + r + 3, y - 7, x + r + 3 + w, y + 7], left = [x - r - 3 - w, y - 7, x - r - 3, y + 7];
+    // Ignore the town's own circle when testing its label.
+    const own = placed.findIndex(b => b[0] === x - r && b[1] === y - r);
+    const saved = own >= 0 ? placed.splice(own, 1)[0] : null;
+    const box = !hits(right) ? right : !hits(left) ? left : null;
+    if (saved) placed.push(saved);
+    if (!box) continue;
+    placed.push(box);
+    labels.push({d, x: box === right ? box[0] : box[2], anchor: box === right ? "start" : "end", y: y + 4, text: d.town});
+  }
+  gLabels.attr("transform", null).selectAll("text").data(labels, l => l.d.key).join("text")
+    .attr("class", "town-label").attr("x", l => l.x).attr("y", l => l.y).attr("text-anchor", l => l.anchor).text(l => l.text);
+}
+
+function drawLegend() {
+  const el = document.getElementById("maplegend");
+  el.innerHTML = REGIONS.map(r => `<div class="row"><span class="sw" style="background:${regionVar(r)}"></span>${REGION_SHORT[r]}</div>`).join("") +
+    `<div class="row" style="color:var(--muted)">Circle size = entrants per town</div>`;
+}
+
+/* ---------- stats rail ---------- */
+function median(a) { if (!a.length) return NaN; const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
+
+function drawRail(rows) {
+  const yearTxt = state.year === "all" ? `${YEARS[0]}–${YEARS[YEARS.length - 1]}` : state.year;
+  const distTxt = state.dist === "All" ? "All distances" : state.dist;
+  document.getElementById("rail-title").textContent = `${yearTxt} · ${distTxt}`;
+  const starters = rows.filter(r => r.status !== "DNS").length, fin = rows.filter(r => r.status === "finished").length;
+  document.getElementById("rail-sub").textContent = rows.length
+    ? `${starters} started · ${fin} finished` + (state.dist === "110K" && state.year === 2023 ? "" : "")
+    : (state.year === 2023 ? "2023 had only a 55K on UltraSignup." : "No entrants for this filter.");
+  const mi = rows.map(r => r.mi), t = aggregate(rows);
+  const far = rows.length ? rows.reduce((a, b) => (b.mi > a.mi ? b : a)) : null;
+  const figs = [
+    [rows.length, "", "Entrants"],
+    [rows.length ? fmtMi(median(mi)) : "–", rows.length ? "mi" : "", "Median trip"],
+    [far ? fmtMi(far.mi) : "–", far ? "mi" : "", far ? `Farthest: ${far.town}, ${far.st}` : "Farthest"],
+    [t.length, "", "Hometowns"],
+  ];
+  document.getElementById("figs").innerHTML = figs.map(([v, u, l]) =>
+    `<div class="fig"><b>${v}${u ? `<small>${u}</small>` : ""}</b><span>${l}</span></div>`).join("");
+  document.getElementById("regions").innerHTML = REGIONS.map(r => {
+    const n = rows.filter(x => x.region === r).length, p = pct(n, rows.length);
+    return `<div class="reg"><span>${REGION_SHORT[r]}</span><span class="bar"><i style="width:${p}%;background:${regionVar(r)}"></i></span>` +
+      `<span class="v">${p}% · ${n}</span></div>`;
+  }).join("");
+  document.getElementById("towns").innerHTML = t.slice(0, 7).map(x =>
+    `<li><span>${x.town}, ${x.st}</span><span>${x.n} · ${fmtMi(x.mi)} mi</span></li>`).join("") || `<li><span>None</span><span></span></li>`;
+  document.getElementById("town-table").innerHTML =
+    `<thead><tr><th>Town</th><th>Region</th><th class="n">Entrants</th><th class="n">Miles</th></tr></thead><tbody>` +
+    t.map(x => `<tr><td>${x.town}, ${x.st}</td><td>${REGION_SHORT[x.region]}</td><td class="n">${x.n}</td><td class="n">${fmtMi(x.mi)}</td></tr>`).join("") + "</tbody>";
+}
+
+/* ---------- strip chart ---------- */
+function drawStrip() {
+  const rowsDef = [];
+  for (const d of DISTS) for (const y of YEARS) {
+    const rs = DATA.runners.filter(r => r.d === d && r.y === y && (state.dns || r.status !== "DNS"));
+    if (rs.length) rowsDef.push({d, y, rs});
+  }
+  const L = 150, R = 30, T = 30, rowH = 34, gapH = 16;
+  let yCursor = T; let prevD = null;
+  for (const row of rowsDef) { if (prevD && row.d !== prevD) yCursor += gapH; row.cy = yCursor + rowH / 2; yCursor += rowH; prevD = row.d; }
+  const Wd = 960, Hd = yCursor + 30;
+  const x = d3.scaleLog().domain([1, 3000]).range([L, Wd - R]);
+  const s = d3.select("#strip").attr("viewBox", `0 0 ${Wd} ${Hd}`);
+  s.selectAll("*").remove();
+  const ticks = [1, 3, 10, 30, 100, 300, 1000, 3000];
+  const grid = s.append("g").attr("class", "grid");
+  grid.selectAll("line").data(ticks).join("line").attr("x1", x).attr("x2", x).attr("y1", T - 6).attr("y2", Hd - 26);
+  const ax = s.append("g").attr("class", "axis");
+  ax.selectAll("text.t").data(ticks).join("text").attr("class", "t").attr("x", x).attr("y", T - 12).attr("text-anchor", "middle")
+    .text(d => d3.format(",")(d) + (d === 1 ? " mi" : ""));
+  ax.selectAll("text.b").data(ticks).join("text").attr("class", "b").attr("x", x).attr("y", Hd - 10).attr("text-anchor", "middle")
+    .text(d => d3.format(",")(d) + (d === 1 ? " mi" : ""));
+  const hash = (i, j) => { let h = (i * 2654435761 + j * 40503) >>> 0; h ^= h >>> 15; return (h % 1000) / 1000; };
+  rowsDef.forEach((row, ri) => {
+    const on = (state.year === "all" || row.y === state.year) && (state.dist === "All" || row.d === state.dist);
+    const g = s.append("g").attr("class", on ? "" : "row-off");
+    const first = ri === 0 || rowsDef[ri - 1].d !== row.d;
+    if (first) g.append("text").attr("class", "rowlabel dist").attr("x", 8).attr("y", row.cy + 5).text(row.d);
+    g.append("text").attr("class", "rowlabel").attr("x", 62).attr("y", row.cy + 4).text(`${row.y}  n=${row.rs.length}`);
+    g.append("line").attr("x1", L).attr("x2", Wd - R).attr("y1", row.cy).attr("y2", row.cy).attr("stroke", "var(--rule)");
+    g.selectAll("circle").data(row.rs).join("circle").attr("class", "dot")
+      .attr("cx", r => x(Math.max(1, r.mi))).attr("cy", (r, j) => row.cy + (hash(ri + 1, j + 1) - 0.5) * (rowH - 12))
+      .attr("r", 4.5).attr("fill", r => regionVar(r.region))
+      .on("pointermove", (ev, r) => showTip(ev, `<b>${r.town}, ${r.st}</b><br>${fmtMi(r.mi)} mi · ${r.d} ${r.y}<br><span class="m">${r.status === "finished" ? "Finished" : r.status}</span>`))
+      .on("pointerleave", hideTip);
+    const med = median(row.rs.map(r => r.mi));
+    g.append("line").attr("class", "med").attr("x1", x(med)).attr("x2", x(med)).attr("y1", row.cy - rowH / 2 + 3).attr("y2", row.cy + rowH / 2 - 3);
+    g.append("text").attr("class", "medlabel").attr("x", x(med) + 5).attr("y", row.cy - rowH / 2 + 10).text(fmtMi(med));
+  });
+}
+
+/* ---------- findings ---------- */
+function drawFindings() {
+  const all = DATA.runners;
+  const med = d => median(all.filter(r => r.d === d).map(r => r.mi));
+  const localShare = rs => pct(rs.filter(r => r.region === "Bainbridge Island" || r.region === "Kitsap County").length, rs.length);
+  const islandShare = d => pct(all.filter(r => r.d === d && r.region === "Bainbridge Island").length, all.filter(r => r.d === d).length);
+  const byYear = YEARS.map(y => { const rs = all.filter(r => r.y === y); return `${y}: ${rs.length} entrants, ${localShare(rs)}% Kitsap`; });
+  const rep = DATA.repeats;
+  const repLocal = (rep.byRegion["Bainbridge Island"] || 0) + (rep.byRegion["Kitsap County"] || 0);
+  const items = [
+    `<b>The 100-miler draws from much farther away.</b> Median trip across all years: ${fmtMi(med("100M"))} mi for the 100M, ${fmtMi(med("110K"))} mi for the 110K, ${fmtMi(med("55K"))} mi for the 55K. Islanders are ${islandShare("55K")}% of 55K entrants but ${islandShare("100M")}% of 100M entrants.`,
+    `<b>The field grew and spread out.</b> ${byYear.join("; ")} (Kitsap here includes Bainbridge). The 2023 edition was a small, mostly island 55K.`,
+    `<b>Repeat runners are mostly local.</b> ${rep.repeat} of ${rep.unique} distinct runners entered in more than one year, and ${repLocal} of those ${rep.repeat} live in Kitsap County.`,
+  ];
+  document.getElementById("findings").innerHTML = items.map(t => `<li>${t}</li>`).join("");
+}
+
+/* ---------- wire up ---------- */
+function update() {
+  syncYear(); syncDist(); syncView(); save();
+  const rows = filtered();
+  drawMap(rows); drawRail(rows); drawStrip();
+}
+drawLegend(); drawFindings();
+zoomTo(state.view || "puget", false);
+update();
+</script>
