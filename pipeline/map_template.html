@@ -141,7 +141,10 @@ h2 { font: 600 var(--step-2)/1.1 var(--font-display); text-transform: uppercase;
 .strip-scroll { overflow-x: auto; border: 1px solid var(--rule); border-radius: 8px; background: var(--panel); }
 .strip-scroll svg { display: block; min-width: 640px; width: 100%; height: auto; }
 .axis text, .rowlabel { font: 400 11px var(--font-data); fill: var(--muted); }
-.rowlabel.dist { font: 600 15px var(--font-display); fill: var(--fg); letter-spacing: 0.03em; }
+.strip-band { fill: var(--bg); }
+.strip-head { font: 700 26px var(--font-display); fill: var(--fg); letter-spacing: 0.02em; }
+.strip-head.sel { fill: var(--accent); }
+.strip-sub { font: 500 12px var(--font-data); fill: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
 .grid line { stroke: var(--rule); }
 .dot { stroke: var(--panel); stroke-width: 1.5; }
 .med { stroke: var(--fg); stroke-width: 2; }
@@ -503,14 +506,27 @@ function drawStrip() {
     const rs = DATA.runners.filter(r => r.d === d && r.y === y && (state.dns || r.status !== "DNS"));
     if (rs.length) rowsDef.push({d, y, rs});
   }
-  const L = 150, R = 30, T = 30, rowH = 34, gapH = 16;
-  let yCursor = T; let prevD = null;
-  for (const row of rowsDef) { if (prevD && row.d !== prevD) yCursor += gapH; row.cy = yCursor + rowH / 2; yCursor += rowH; prevD = row.d; }
-  const Wd = 960, Hd = yCursor + 30;
+  // Each distance is a band: a header row with the distance name, then one row per year.
+  const L = 150, R = 30, T = 30, headH = 40, rowH = 34, gapH = 14;
+  const DIST_NAME = {"55K": "55 kilometers", "110K": "110 kilometers", "100M": "100 miles"};
+  const groups = [];
+  let yCursor = T;
+  for (const d of DISTS) {
+    const rows = rowsDef.filter(r => r.d === d);
+    if (!rows.length) continue;
+    const top = yCursor;
+    yCursor += headH;
+    for (const row of rows) { row.cy = yCursor + rowH / 2; yCursor += rowH; }
+    groups.push({d, top, bottom: yCursor + 6});
+    yCursor += gapH;
+  }
+  const Wd = 960, Hd = yCursor + 24;
   const x = d3.scaleLog().domain([1, 3000]).range([L, Wd - R]);
   const s = d3.select("#strip").attr("viewBox", `0 0 ${Wd} ${Hd}`);
   s.selectAll("*").remove();
   const ticks = [1, 3, 10, 30, 100, 300, 1000, 3000];
+  s.append("g").selectAll("rect").data(groups).join("rect").attr("class", "strip-band")
+    .attr("x", 0).attr("width", Wd).attr("y", g => g.top).attr("height", g => g.bottom - g.top);
   const grid = s.append("g").attr("class", "grid");
   grid.selectAll("line").data(ticks).join("line").attr("x1", x).attr("x2", x).attr("y1", T - 6).attr("y2", Hd - 26);
   const ax = s.append("g").attr("class", "axis");
@@ -519,12 +535,18 @@ function drawStrip() {
   ax.selectAll("text.b").data(ticks).join("text").attr("class", "b").attr("x", x).attr("y", Hd - 10).attr("text-anchor", "middle")
     .text(d => d3.format(",")(d) + (d === 1 ? " mi" : ""));
   const hash = (i, j) => { let h = (i * 2654435761 + j * 40503) >>> 0; h ^= h >>> 15; return (h % 1000) / 1000; };
+  // Distance headers stay at full strength; only year rows dim with the filter.
+  const heads = s.append("g");
+  for (const grp of groups) {
+    const sel = state.dist === grp.d;
+    const t = heads.append("text").attr("class", "strip-head" + (sel ? " sel" : "")).attr("x", 14).attr("y", grp.top + 29).text(grp.d);
+    const w = t.node().getComputedTextLength();
+    heads.append("text").attr("class", "strip-sub").attr("x", 14 + w + 10).attr("y", grp.top + 28).text(DIST_NAME[grp.d]);
+  }
   rowsDef.forEach((row, ri) => {
-    const on = (state.year === "all" || row.y === state.year) && (state.dist === "All" || row.d === state.dist);
+    const on = (state.year === "all" ? row.y !== UP_YEAR : row.y === state.year) && (state.dist === "All" || row.d === state.dist);
     const g = s.append("g").attr("class", on ? "" : "row-off");
-    const first = ri === 0 || rowsDef[ri - 1].d !== row.d;
-    if (first) g.append("text").attr("class", "rowlabel dist").attr("x", 8).attr("y", row.cy + 5).text(row.d);
-    g.append("text").attr("class", "rowlabel").attr("x", 62).attr("y", row.cy + 4).text(`${row.y}${row.y === UP_YEAR ? "*" : " "} n=${row.rs.length}`);
+    g.append("text").attr("class", "rowlabel").attr("x", 30).attr("y", row.cy + 4).text(`${row.y}${row.y === UP_YEAR ? "*" : " "} n=${row.rs.length}`);
     g.append("line").attr("x1", L).attr("x2", Wd - R).attr("y1", row.cy).attr("y2", row.cy).attr("stroke", "var(--rule)")
       .attr("stroke-dasharray", row.y === UP_YEAR ? "4 4" : null);
     g.selectAll("circle").data(row.rs).join("circle").attr("class", "dot")
@@ -559,7 +581,8 @@ function drawFindings() {
       `${UP.returning} of them have run BURT before, and ${pct(reg.filter(r => r.region === "Bainbridge Island").length, reg.length)}% live on the island.`);
     document.getElementById("strip-note").textContent = ` * ${UP_YEAR} shows registrations as of ${fmtDate(UP.asOf)}.`;
     const note = document.getElementById("note-upcoming");
-    note.textContent = `${UP_YEAR} comes from UltraSignup's entrant list as of ${fmtDate(UP.asOf)}. It has no DNF or DNS data and isn't counted in "All years". Results replace it after the race.`;
+    note.textContent = `${UP_YEAR} comes from UltraSignup's entrant list as of ${fmtDate(UP.asOf)}. It has no DNF or DNS data and isn't counted in "All years". Results replace it after the race.` +
+      (UP.unmapped ? ` ${UP.unmapped} registrant${UP.unmapped > 1 ? "s have hometowns" : " has a hometown"} I couldn't place on the map yet.` : "");
     note.hidden = false;
   }
   document.getElementById("findings").innerHTML = items.map(t => `<li>${t}</li>`).join("");
