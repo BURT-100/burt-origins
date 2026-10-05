@@ -13,7 +13,19 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 ./pipeline/run_all.sh
 ```
 
-To pull the latest entrant list for the upcoming edition (currently 2027) and republish:
+A GitHub Action (`.github/workflows/refresh.yml`) re-pulls the upcoming edition's entrant lists
+every Monday and republishes the page. It works only from the name-free files in `data/public/`,
+and stops itself after race day, when a list comes back empty, or when it shrinks by more than half.
+Run it on demand from the Actions tab, or:
+
+```sh
+gh workflow run refresh.yml
+```
+
+After race day, run the full pipeline locally to pull results (it needs `.burt_key`, the same
+value as the `BURT_KEY_SECRET` repo secret, to hash runner names for the returning-runner count).
+
+To pull the latest entrant list yourself and republish:
 
 ```sh
 ./pipeline/run_all.sh --refresh

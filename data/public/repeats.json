@@ -1,0 +1,11 @@
+{
+  "unique": 121,
+  "repeat": 27,
+  "byRegion": {
+    "Bainbridge Island": 14,
+    "King County": 3,
+    "Kitsap County": 3,
+    "Other WA": 6,
+    "Out of state": 1
+  }
+}

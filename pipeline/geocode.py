@@ -61,33 +61,39 @@ def load_overrides():
     return out
 
 
+def geocode_row(r, places, overrides) -> bool:
+    """Add geo_city/geo_state/lat/lon/county_fips/region/miles/geo_source to `r`. False if unmatched."""
+    city, st = r["city"], r["state"]
+    ov = overrides.get((norm(city), st))
+    lat = lon = county = None
+    geo_city, geo_state, how = city, st, "gazetteer"
+    if ov:
+        geo_city, geo_state = ov["city"] or city, ov["state"] or st
+        how = "manual"
+        if ov.get("lat") and ov.get("lon"):
+            lat, lon, county = float(ov["lat"]), float(ov["lon"]), ov.get("county_fips", "")
+    if lat is None:
+        hit = places.get((norm(geo_city), geo_state))
+        if hit:
+            lat, lon, county = float(hit[0]), float(hit[1]), hit[2]
+            geo_city = hit[3]
+    if lat is None:
+        r.update(geo_city="", geo_state="", lat="", lon="", county_fips="", region="unknown",
+                 miles="", geo_source="unmatched")
+        return False
+    r.update(geo_city=geo_city, geo_state=geo_state, lat=round(lat, 5), lon=round(lon, 5),
+             county_fips=county, region=region(geo_city, geo_state, county),
+             miles=round(miles(RACE_LAT, RACE_LON, lat, lon), 1), geo_source=how)
+    return True
+
+
 def main():
     places, overrides = load_places(), load_overrides()
     rows, unmatched = [], []
     with open(DATA / "runners.csv") as f:
         for r in csv.DictReader(f):
-            city, st = r["city"], r["state"]
-            ov = overrides.get((norm(city), st))
-            lat = lon = county = None
-            geo_city, geo_state, how = city, st, "gazetteer"
-            if ov:
-                geo_city, geo_state = ov["city"] or city, ov["state"] or st
-                how = "manual"
-                if ov.get("lat") and ov.get("lon"):
-                    lat, lon, county = float(ov["lat"]), float(ov["lon"]), ov.get("county_fips", "")
-            if lat is None:
-                hit = places.get((norm(geo_city), geo_state))
-                if hit:
-                    lat, lon, county = float(hit[0]), float(hit[1]), hit[2]
-                    geo_city = hit[3]
-            if lat is None:
+            if not geocode_row(r, places, overrides):
                 unmatched.append(r)
-                r.update(geo_city="", geo_state="", lat="", lon="", county_fips="", region="unknown",
-                         miles="", geo_source="unmatched")
-            else:
-                r.update(geo_city=geo_city, geo_state=geo_state, lat=round(lat, 5), lon=round(lon, 5),
-                         county_fips=county, region=region(geo_city, geo_state, county),
-                         miles=round(miles(RACE_LAT, RACE_LON, lat, lon), 1), geo_source=how)
             rows.append(r)
 
     with open(DATA / "runners_geo.csv", "w", newline="") as f:

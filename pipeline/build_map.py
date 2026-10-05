@@ -1,14 +1,12 @@
-"""Step 6: build site/burt-origins.html, a self-contained page (data + geometry inlined).
+"""Step 7: build site/burt-origins.html, a self-contained page (data + geometry inlined).
 
-Public version: per-runner rows carry town, distance, status and miles only. No names
-or UltraSignup ids are embedded.
+Reads only the name-free data in data/public/ and upcoming.json, so the weekly GitHub
+Action can run it without access to raw results.
 """
-import csv
 import json
-from collections import defaultdict
 
+import public
 from common import ROOT
-from metrics import runner_key
 
 DATA = ROOT / "data"
 REF = DATA / "ref"
@@ -50,40 +48,20 @@ def prune_topology(topo, keep):
 
 
 def main():
-    rows = list(csv.DictReader(open(DATA / "runners_geo.csv")))
+    rows = public.read_runners()
     runners = [{
         "y": int(r["year"]), "d": r["distance"],
         "town": r["geo_city"], "st": r["geo_state"],
         "lat": float(r["lat"]), "lon": float(r["lon"]),
         "region": r["region"], "mi": float(r["miles"]), "status": r["status"],
     } for r in rows]
-
-    up_path = ROOT / "upcoming.json"
-    up = json.loads(up_path.read_text()) if up_path.exists() else None
-    up_year = str(up["year"]) if up else None
-
-    # Repeat runners across completed editions, keyed on name (see metrics.runner_key).
-    years = defaultdict(set)
-    region_of = {}
-    for r in rows:
-        if r["year"] == up_year:
-            continue
-        key = runner_key(r)
-        years[key].add(r["year"])
-        region_of[key] = r["region"]
-    repeat_by_region = defaultdict(int)
-    for k, v in years.items():
-        if len(v) > 1:
-            repeat_by_region[region_of[k]] += 1
-    repeats = {"unique": len(years), "repeat": sum(repeat_by_region.values()),
-               "byRegion": dict(repeat_by_region)}
-
+    repeats = json.loads((public.PUBLIC / "repeats.json").read_text())
+    up = public.load_upcoming()
     upcoming = None
     if up:
-        registered = [r for r in rows if r["year"] == up_year]
         upcoming = {"year": up["year"], "raceDate": up["race_date"], "asOf": up.get("as_of"),
-                    "caps": up.get("caps", {}),
-                    "returning": sum(runner_key(r) in years for r in registered)}
+                    "caps": up.get("caps", {}), "returning": up.get("returning", 0),
+                    "unmapped": up.get("unmapped", 0)}
 
     us = json.load(open(REF / "counties-10m.json"))
     # States only; WA comes from the detailed wa_counties.json instead.

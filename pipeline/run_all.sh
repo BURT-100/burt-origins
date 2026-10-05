@@ -9,6 +9,7 @@ $PY discover.py "$@"
 $PY fetch.py "$@"
 $PY parse.py
 $PY geocode.py
+$PY export_public.py
 $PY metrics.py
 $PY wa_shapes.py
 $PY build_map.py

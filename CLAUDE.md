@@ -26,6 +26,11 @@ which always shows the current edition) and writes `upcoming.json` (year, race d
 Its entrant lists are saved as dated snapshots (`entrants_{did}_{YYYY-MM-DD}.html`) and re-fetched only
 with `--refresh`; this is the one exception to "never re-fetch". Never request results JSON for the
 upcoming edition, or an empty result would be cached forever.
+
+Public data: `export_public.py` writes name-free `data/public/` (runners.csv, repeats.json,
+past_keys.txt of HMAC-hashed names). `metrics.py` and `build_map.py` read only that, so the weekly
+GitHub Action (`refresh_upcoming.py`) can rebuild without raw data. Hash key: `.burt_key` locally,
+`BURT_KEY_SECRET` in Actions; they must match.
 Known `dtid` values: 2023 = 54846, 2026 = 63528.
 
 Rules: low request rate (sleep ≥2s), cache raw responses to disk, never re-fetch cached data.
