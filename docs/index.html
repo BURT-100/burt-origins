@@ -44,6 +44,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { background: var(--bg); color: var(--fg); font: 400 var(--step-0)/1.5 var(--font-body); }
 .wrap { max-width: 1240px; margin: 0 auto; padding-inline: max(16px, 3vw); padding-block: 28px 56px;
   display: grid; gap: 28px; }
@@ -58,12 +59,17 @@ h2 { font: 600 var(--step-2)/1.1 var(--font-display); text-transform: uppercase;
 .controls { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: end;
   position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg);
   padding-block: 10px; border-bottom: 1px solid var(--rule); }
-.ctl { display: grid; gap: 6px; }
+.ctl { display: grid; gap: 6px; min-width: 0; max-width: 100%; }
+@media (max-width: 560px) { .controls { position: static; } }
+@media (max-width: 480px) {
+  .controls .seg button { padding: 8px 10px; font-size: var(--step-0); }
+}
 .ctl-label { font: 500 0.6875rem/1 var(--font-data); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
-.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; background: var(--panel); }
+/* Buttons sit on a rule-colored ground with 1px gaps, so the dividers stay clean when a group wraps. */
+.seg { display: inline-flex; flex-wrap: wrap; gap: 1px; max-width: 100%; border: 1px solid var(--rule);
+  border-radius: 6px; overflow: hidden; background: var(--rule); }
 .seg button { font: 600 var(--step-1)/1 var(--font-display); letter-spacing: 0.03em; color: var(--fg);
-  background: none; border: 0; padding: 8px 13px; cursor: pointer; font-variant-numeric: tabular-nums; }
-.seg button + button { border-left: 1px solid var(--rule); }
+  background: var(--panel); border: 0; padding: 8px 13px; flex: 1 0 auto; cursor: pointer; font-variant-numeric: tabular-nums; }
 .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
 .seg button.up { font-style: italic; }
 .seg button.up:not([aria-pressed="true"]) { color: var(--accent); }
@@ -101,7 +107,14 @@ h2 { font: 600 var(--step-2)/1.1 var(--font-display); text-transform: uppercase;
   border-radius: 6px; padding: 8px 10px; display: grid; gap: 4px; font-size: 0.75rem; }
 .maplegend .row { display: flex; gap: 7px; align-items: center; }
 .sw { width: 11px; height: 11px; border-radius: 50%; flex: none; }
-@media (max-width: 560px) { .maplegend { display: none; } }
+@media (max-width: 560px) {
+  .maplegend { display: none; }
+  /* Phones: controls sit in a strip above the map instead of covering it. */
+  .mapbox { display: flex; flex-direction: column; }
+  .mapbar { order: -1; position: static; padding: 8px; background: var(--panel); border-bottom: 1px solid var(--rule); }
+  .mapbar .seg button { font-size: var(--step--1); padding: 6px 8px; }
+  .offview { border: 0; padding: 0; background: none; }
+}
 
 .rail { display: grid; gap: 20px; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 18px; }
 .rail-head { display: grid; gap: 2px; }
