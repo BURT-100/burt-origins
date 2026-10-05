@@ -1,7 +1,7 @@
 # BURT 100 Runner Origins
 
 Interactive map of where BURT 100 (Bainbridge Island, WA) entrants travel from, by year and
-distance, built from UltraSignup results. Live page: https://gosborn.github.io/burt-origins/
+distance, built from UltraSignup results. Live page: https://burt-100.github.io/burt-origins/
 
 The published page and this repo show counts by town only. Raw results (which include runner
 names) are cached locally in `data/raw/` and are not checked in.
