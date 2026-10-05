@@ -61,6 +61,8 @@ h2 { font: 600 var(--step-2)/1.1 var(--font-display); text-transform: uppercase;
   background: none; border: 0; padding: 8px 13px; cursor: pointer; font-variant-numeric: tabular-nums; }
 .seg button + button { border-left: 1px solid var(--rule); }
 .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.seg button.up { font-style: italic; }
+.seg button.up:not([aria-pressed="true"]) { color: var(--accent); }
 .seg button:focus-visible, .chk input:focus-visible, .linkbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .toggles { display: flex; gap: 16px; flex-wrap: wrap; padding-bottom: 6px; }
 .chk { display: inline-flex; gap: 6px; align-items: center; font-size: var(--step--1); cursor: pointer; }
@@ -111,6 +113,11 @@ h2 { font: 600 var(--step-2)/1.1 var(--font-display); text-transform: uppercase;
 .reg .bar { height: 10px; background: var(--rule); border-radius: 2px; overflow: hidden; }
 .reg .bar i { display: block; height: 100%; border-radius: 0 3px 3px 0; }
 .reg .v { font-family: var(--font-data); font-size: 0.75rem; text-align: right; font-variant-numeric: tabular-nums; }
+.caps { display: grid; gap: 7px; }
+.cap { display: grid; grid-template-columns: 44px minmax(0, 1fr) 54px; gap: 8px; align-items: center; font-size: var(--step--1); }
+.cap .bar { height: 10px; border-radius: 2px; border: 1px dashed var(--land-line); overflow: hidden; }
+.cap .bar i { display: block; height: 100%; background: var(--accent); }
+.cap .v { font-family: var(--font-data); font-size: 0.75rem; text-align: right; font-variant-numeric: tabular-nums; }
 .towns { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: var(--step--1); }
 .towns li { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dotted var(--rule); padding-bottom: 3px; }
 .towns li span:last-child { font-family: var(--font-data); font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -183,6 +190,10 @@ td.n { text-align: right; font-family: var(--font-data); }
         <div class="rail-sub" id="rail-sub"></div>
       </div>
       <div class="figs" id="figs"></div>
+      <div id="caps-wrap" style="display:grid;gap:8px" hidden>
+        <div class="sec-label">Spots filled</div>
+        <div class="caps" id="caps"></div>
+      </div>
       <div class="regions-wrap" style="display:grid;gap:8px">
         <div class="sec-label">Where they live</div>
         <div class="regions" id="regions"></div>
@@ -200,7 +211,7 @@ td.n { text-align: right; font-family: var(--font-data); }
 
   <section class="strip-sec">
     <h2>Every trip, by distance and year</h2>
-    <p>One dot per entrant, on a log scale so the island and the far travelers both fit. The black tick marks the median trip. Rows outside your current filter are dimmed.</p>
+    <p>One dot per entrant, on a log scale so the island and the far travelers both fit. The black tick marks the median trip. Rows outside your current filter are dimmed.<span id="strip-note"></span></p>
     <div class="strip-scroll"><svg id="strip" role="img" aria-label="Travel distance of every entrant by race and year"></svg></div>
   </section>
 
@@ -215,6 +226,7 @@ td.n { text-align: right; font-family: var(--font-data); }
         <li>Source: UltraSignup results for each BURT 100 distance. 2023 was a 55K-only year on UltraSignup, and no earlier editions are listed.</li>
         <li>An entrant is anyone in the results: finishers, DNFs and, unless you turn them off, registered non-starters.</li>
         <li>Hometown is what the runner entered at registration. Distances run from the town's center to Battle Point Park, so island runners all show about 3 miles.</li>
+        <li id="note-upcoming" hidden></li>
         <li>Counts are by town only. No runner names are shown.</li>
       </ul>
     </section>
@@ -232,6 +244,12 @@ const REGION_SHORT = {"Bainbridge Island": "Bainbridge", "Kitsap County": "Rest 
   "Other WA": "Rest of WA", "Out of state": "Out of state"};
 const DISTS = ["55K", "110K", "100M"];
 const YEARS = [...new Set(DATA.runners.map(r => r.y))].sort();
+// An upcoming edition has a registration list but no results. "All years" means completed editions.
+const UP = DATA.upcoming;
+const UP_YEAR = UP ? UP.year : null;
+const DONE_YEARS = YEARS.filter(y => y !== UP_YEAR);
+const fmtDate = (iso, opts = {month: "short", day: "numeric", year: "numeric"}) =>
+  iso ? new Date(iso + "T12:00:00").toLocaleDateString("en-US", opts) : "";
 const VIEWS = {
   puget: {label: "Puget Sound", box: [[-123.2, 46.95], [-121.85, 48.15]]},
   nw: {label: "Northwest", box: [[-125.2, 43.2], [-113.2, 51.0]]},
@@ -242,12 +260,12 @@ const regionVar = r => `var(--r${REGIONS.indexOf(r) + 1})`;
 const fmtMi = m => m >= 100 ? d3.format(",.0f")(m) : d3.format(".1f")(m);
 const pct = (a, b) => b ? Math.round(100 * a / b) : 0;
 
-const state = {year: Math.max(...YEARS), dist: "All", lines: true, dns: true, view: "puget"};
+const state = {year: Math.max(...DONE_YEARS), dist: "All", lines: true, dns: true, view: "puget"};
 try { const s = JSON.parse(localStorage.getItem("burt-origins") || "null"); if (s) Object.assign(state, s); } catch (e) {}
 function save() { try { localStorage.setItem("burt-origins", JSON.stringify(state)); } catch (e) {} }
 
 function match(r, s = state) {
-  return (s.year === "all" || r.y === s.year) && (s.dist === "All" || r.d === s.dist) && (s.dns || r.status !== "DNS");
+  return (s.year === "all" ? r.y !== UP_YEAR : r.y === s.year) && (s.dist === "All" || r.d === s.dist) && (s.dns || r.status !== "DNS");
 }
 const filtered = () => DATA.runners.filter(r => match(r));
 
@@ -262,8 +280,10 @@ function seg(el, items, key, onPick) {
   }
   return () => el.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === String(state[key])));
 }
-const syncYear = seg(document.getElementById("year"), [...YEARS.map(y => [y, y]), ["all", "All years"]], "year",
+const syncYear = seg(document.getElementById("year"),
+  [...DONE_YEARS.map(y => [y, y]), ["all", "All years"], ...(UP ? [[UP_YEAR, `${UP_YEAR} so far`]] : [])], "year",
   v => { state.year = v; update(); });
+if (UP) document.querySelector(`#year button[data-v="${UP_YEAR}"]`).classList.add("up");
 const syncDist = seg(document.getElementById("dist"), [["All", "All"], ...DISTS.map(d => [d, d])], "dist",
   v => { state.dist = v; update(); });
 const syncView = seg(document.getElementById("view"), VIEW_ORDER.map(k => [k, VIEWS[k].label]), "view",
@@ -348,7 +368,7 @@ function aggregate(rows) {
 
 function townTip(t) {
   const dists = DISTS.filter(d => t.byDist[d]).map(d => `${d} ${t.byDist[d]}`).join(" · ");
-  const st = ["finished", "DNF", "DNS"].filter(s => t.byStatus[s]).map(s => `${t.byStatus[s]} ${s === "finished" ? "finished" : s}`).join(" · ");
+  const st = ["finished", "DNF", "DNS", "registered"].filter(s => t.byStatus[s]).map(s => `${t.byStatus[s]} ${s === "finished" ? "finished" : s}`).join(" · ");
   return `<b>${t.town}, ${t.st}</b><br>${t.n} entrant${t.n > 1 ? "s" : ""} · ${fmtMi(t.mi)} mi to start<br>` +
     `<span class="m">${dists}<br>${st}</span>`;
 }
@@ -421,17 +441,30 @@ function drawLegend() {
 function median(a) { if (!a.length) return NaN; const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
 
 function drawRail(rows) {
-  const yearTxt = state.year === "all" ? `${YEARS[0]}–${YEARS[YEARS.length - 1]}` : state.year;
+  const isUp = state.year === UP_YEAR;
+  const yearTxt = state.year === "all" ? `${DONE_YEARS[0]}–${DONE_YEARS[DONE_YEARS.length - 1]}`
+    : isUp ? `${state.year} so far` : state.year;
   const distTxt = state.dist === "All" ? "All distances" : state.dist;
   document.getElementById("rail-title").textContent = `${yearTxt} · ${distTxt}`;
   const starters = rows.filter(r => r.status !== "DNS").length, fin = rows.filter(r => r.status === "finished").length;
-  document.getElementById("rail-sub").textContent = rows.length
-    ? `${starters} started · ${fin} finished` + (state.dist === "110K" && state.year === 2023 ? "" : "")
+  document.getElementById("rail-sub").textContent = isUp
+    ? `Registered as of ${fmtDate(UP.asOf)} · race day ${fmtDate(UP.raceDate)}`
+    : rows.length ? `${starters} started · ${fin} finished`
     : (state.year === 2023 ? "2023 had only a 55K on UltraSignup." : "No entrants for this filter.");
+  const capsWrap = document.getElementById("caps-wrap");
+  capsWrap.hidden = !isUp;
+  if (isUp) {
+    const dists = DISTS.filter(d => UP.caps[d] && (state.dist === "All" || state.dist === d));
+    document.getElementById("caps").innerHTML = dists.map(d => {
+      const n = rows.filter(r => r.d === d).length, cap = UP.caps[d];
+      return `<div class="cap"><span>${d}</span><span class="bar"><i style="width:${Math.min(100, pct(n, cap))}%"></i></span>` +
+        `<span class="v">${n} / ${cap}</span></div>`;
+    }).join("");
+  }
   const mi = rows.map(r => r.mi), t = aggregate(rows);
   const far = rows.length ? rows.reduce((a, b) => (b.mi > a.mi ? b : a)) : null;
   const figs = [
-    [rows.length, "", "Entrants"],
+    [rows.length, "", isUp ? "Registered" : "Entrants"],
     [rows.length ? fmtMi(median(mi)) : "–", rows.length ? "mi" : "", "Median trip"],
     [far ? fmtMi(far.mi) : "–", far ? "mi" : "", far ? `Farthest: ${far.town}, ${far.st}` : "Farthest"],
     [t.length, "", "Hometowns"],
@@ -478,12 +511,13 @@ function drawStrip() {
     const g = s.append("g").attr("class", on ? "" : "row-off");
     const first = ri === 0 || rowsDef[ri - 1].d !== row.d;
     if (first) g.append("text").attr("class", "rowlabel dist").attr("x", 8).attr("y", row.cy + 5).text(row.d);
-    g.append("text").attr("class", "rowlabel").attr("x", 62).attr("y", row.cy + 4).text(`${row.y}  n=${row.rs.length}`);
-    g.append("line").attr("x1", L).attr("x2", Wd - R).attr("y1", row.cy).attr("y2", row.cy).attr("stroke", "var(--rule)");
+    g.append("text").attr("class", "rowlabel").attr("x", 62).attr("y", row.cy + 4).text(`${row.y}${row.y === UP_YEAR ? "*" : " "} n=${row.rs.length}`);
+    g.append("line").attr("x1", L).attr("x2", Wd - R).attr("y1", row.cy).attr("y2", row.cy).attr("stroke", "var(--rule)")
+      .attr("stroke-dasharray", row.y === UP_YEAR ? "4 4" : null);
     g.selectAll("circle").data(row.rs).join("circle").attr("class", "dot")
       .attr("cx", r => x(Math.max(1, r.mi))).attr("cy", (r, j) => row.cy + (hash(ri + 1, j + 1) - 0.5) * (rowH - 12))
       .attr("r", 4.5).attr("fill", r => regionVar(r.region))
-      .on("pointermove", (ev, r) => showTip(ev, `<b>${r.town}, ${r.st}</b><br>${fmtMi(r.mi)} mi · ${r.d} ${r.y}<br><span class="m">${r.status === "finished" ? "Finished" : r.status}</span>`))
+      .on("pointermove", (ev, r) => showTip(ev, `<b>${r.town}, ${r.st}</b><br>${fmtMi(r.mi)} mi · ${r.d} ${r.y}<br><span class="m">${r.status === "finished" ? "Finished" : r.status === "registered" ? "Registered" : r.status}</span>`))
       .on("pointerleave", hideTip);
     const med = median(row.rs.map(r => r.mi));
     g.append("line").attr("class", "med").attr("x1", x(med)).attr("x2", x(med)).attr("y1", row.cy - rowH / 2 + 3).attr("y2", row.cy + rowH / 2 - 3);
@@ -493,11 +527,11 @@ function drawStrip() {
 
 /* ---------- findings ---------- */
 function drawFindings() {
-  const all = DATA.runners;
+  const all = DATA.runners.filter(r => r.y !== UP_YEAR);
   const med = d => median(all.filter(r => r.d === d).map(r => r.mi));
   const localShare = rs => pct(rs.filter(r => r.region === "Bainbridge Island" || r.region === "Kitsap County").length, rs.length);
   const islandShare = d => pct(all.filter(r => r.d === d && r.region === "Bainbridge Island").length, all.filter(r => r.d === d).length);
-  const byYear = YEARS.map(y => { const rs = all.filter(r => r.y === y); return `${y}: ${rs.length} entrants, ${localShare(rs)}% Kitsap`; });
+  const byYear = DONE_YEARS.map(y => { const rs = all.filter(r => r.y === y); return `${y}: ${rs.length} entrants, ${localShare(rs)}% Kitsap`; });
   const rep = DATA.repeats;
   const repLocal = (rep.byRegion["Bainbridge Island"] || 0) + (rep.byRegion["Kitsap County"] || 0);
   const items = [
@@ -505,6 +539,16 @@ function drawFindings() {
     `<b>The field grew and spread out.</b> ${byYear.join("; ")} (Kitsap here includes Bainbridge). The 2023 edition was a small, mostly island 55K.`,
     `<b>Repeat runners are mostly local.</b> ${rep.repeat} of ${rep.unique} distinct runners entered in more than one year, and ${repLocal} of those ${rep.repeat} live in Kitsap County.`,
   ];
+  if (UP) {
+    const reg = DATA.runners.filter(r => r.y === UP_YEAR);
+    const fill = DISTS.filter(d => UP.caps[d]).map(d => `${d} ${reg.filter(r => r.d === d).length} of ${UP.caps[d]}`).join(", ");
+    items.push(`<b>${UP_YEAR} so far.</b> ${reg.length} registered as of ${fmtDate(UP.asOf)} (${fill}). ` +
+      `${UP.returning} of them have run BURT before, and ${pct(reg.filter(r => r.region === "Bainbridge Island").length, reg.length)}% live on the island.`);
+    document.getElementById("strip-note").textContent = ` * ${UP_YEAR} shows registrations as of ${fmtDate(UP.asOf)}.`;
+    const note = document.getElementById("note-upcoming");
+    note.textContent = `${UP_YEAR} comes from UltraSignup's entrant list as of ${fmtDate(UP.asOf)}. It has no DNF or DNS data and isn't counted in "All years". Results replace it after the race.`;
+    note.hidden = false;
+  }
   document.getElementById("findings").innerHTML = items.map(t => `<li>${t}</li>`).join("");
 }
 

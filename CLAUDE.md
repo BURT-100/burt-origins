@@ -21,6 +21,11 @@ Each year × distance has its own `did` (distance ID).
 
 All dids are discovered and saved in `dids.json` (2023 was 55K-only; no earlier years on UltraSignup).
 Entrant pages are empty after the race, so the results JSON serves as the entrant list.
+Upcoming edition (no results yet): `discover.py` follows the registration page (`register.aspx?eid=17000`,
+which always shows the current edition) and writes `upcoming.json` (year, race date, dids, caps).
+Its entrant lists are saved as dated snapshots (`entrants_{did}_{YYYY-MM-DD}.html`) and re-fetched only
+with `--refresh`; this is the one exception to "never re-fetch". Never request results JSON for the
+upcoming edition, or an empty result would be cached forever.
 Known `dtid` values: 2023 = 54846, 2026 = 63528.
 
 Rules: low request rate (sleep ≥2s), cache raw responses to disk, never re-fetch cached data.

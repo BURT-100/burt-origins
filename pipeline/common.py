@@ -33,3 +33,24 @@ def cached_get(url: str, cache_name: str) -> str:
     path.write_text(r.text)
     print(f"  fetched {url} -> {path.name}")
     return r.text
+
+
+def snapshot_get(url: str, prefix: str, refresh: bool) -> tuple[str, str]:
+    """Fetch a page that changes over time (an open entrant list) as a dated snapshot.
+
+    Saves data/raw/<prefix>_<YYYY-MM-DD>.html. Without `refresh`, reuses the newest
+    existing snapshot and only fetches if there is none. Returns (body, snapshot date).
+    """
+    existing = latest_snapshot(prefix)
+    today = time.strftime("%Y-%m-%d")
+    if existing and (not refresh or existing[1] == today):
+        return existing[0].read_text(), existing[1]
+    return cached_get(url, f"{prefix}_{today}.html"), today
+
+
+def latest_snapshot(prefix: str):
+    """(path, date) of the newest data/raw/<prefix>_<date>.html, or None."""
+    snaps = sorted(RAW.glob(f"{prefix}_????-??-??.html"))
+    if not snaps:
+        return None
+    return snaps[-1], snaps[-1].stem.rsplit("_", 1)[1]

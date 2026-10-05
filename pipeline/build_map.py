@@ -8,6 +8,7 @@ import json
 from collections import defaultdict
 
 from common import ROOT
+from metrics import runner_key
 
 DATA = ROOT / "data"
 REF = DATA / "ref"
@@ -57,10 +58,17 @@ def main():
         "region": r["region"], "mi": float(r["miles"]), "status": r["status"],
     } for r in rows]
 
+    up_path = ROOT / "upcoming.json"
+    up = json.loads(up_path.read_text()) if up_path.exists() else None
+    up_year = str(up["year"]) if up else None
+
+    # Repeat runners across completed editions, keyed on name (see metrics.runner_key).
     years = defaultdict(set)
     region_of = {}
     for r in rows:
-        key = r["participant_id"] or f"{r['first']} {r['last']}".lower()
+        if r["year"] == up_year:
+            continue
+        key = runner_key(r)
         years[key].add(r["year"])
         region_of[key] = r["region"]
     repeat_by_region = defaultdict(int)
@@ -69,6 +77,13 @@ def main():
             repeat_by_region[region_of[k]] += 1
     repeats = {"unique": len(years), "repeat": sum(repeat_by_region.values()),
                "byRegion": dict(repeat_by_region)}
+
+    upcoming = None
+    if up:
+        registered = [r for r in rows if r["year"] == up_year]
+        upcoming = {"year": up["year"], "raceDate": up["race_date"], "asOf": up.get("as_of"),
+                    "caps": up.get("caps", {}),
+                    "returning": sum(runner_key(r) in years for r in registered)}
 
     us = json.load(open(REF / "counties-10m.json"))
     # States only; WA comes from the detailed wa_counties.json instead.
@@ -79,7 +94,7 @@ def main():
     world = prune_topology(world, lambda n, g: n == "countries" and g.get("id") in KEEP_COUNTRIES)
     world["objects"].pop("land", None)
 
-    payload = {"runners": runners, "repeats": repeats, "us": us, "world": world,
+    payload = {"runners": runners, "repeats": repeats, "upcoming": upcoming, "us": us, "world": world,
                "wa": json.load(open(REF / "wa_counties.json"))}
     html = TEMPLATE.read_text().replace("/*__DATA__*/null", json.dumps(payload, separators=(",", ":")))
     # site/: artifact source (the artifact host adds the document skeleton on publish).

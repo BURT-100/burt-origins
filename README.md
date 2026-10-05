@@ -13,6 +13,13 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 ./pipeline/run_all.sh
 ```
 
+To pull the latest entrant list for the upcoming edition (currently 2027) and republish:
+
+```sh
+./pipeline/run_all.sh --refresh
+git add -A && git commit -m "Refresh entrants" && git push
+```
+
 Steps: discover dids → fetch results → parse → geocode (GeoNames, offline) → metrics → map.
 Output: `docs/index.html` (GitHub Pages) and `site/burt-origins.html` (Claude artifact source).
 Manual geocoding fixes live in `data/manual_geocode.csv`.

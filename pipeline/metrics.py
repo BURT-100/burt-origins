@@ -1,8 +1,11 @@
 """Step 5: per year x distance metrics -> data/metrics.csv, plus repeat-runner summary.
 
 Entrants = everyone in the results (finished + DNF + DNS); starters exclude DNS.
+"All" years covers completed editions only; an upcoming edition (registered so far)
+gets its own rows but stays out of the totals.
 """
 import csv
+import json
 import statistics
 from collections import defaultdict
 
@@ -27,11 +30,14 @@ def summarize(rows):
 
 def main():
     rows = list(csv.DictReader(open(DATA / "runners_geo.csv")))
+    up = ROOT / "upcoming.json"
+    upcoming_year = str(json.loads(up.read_text())["year"]) if up.exists() else None
     groups = defaultdict(list)
     for r in rows:
         for dist in (r["distance"], "All"):
             groups[(r["year"], dist)].append(r)
-            groups[("All", dist)].append(r)
+            if r["year"] != upcoming_year:
+                groups[("All", dist)].append(r)
     order = {"55K": 0, "110K": 1, "100M": 2, "All": 3}
     out = []
     for (year, dist), g in sorted(groups.items(), key=lambda kv: (kv[0][0], order[kv[0][1]])):
@@ -43,11 +49,12 @@ def main():
     for m in out:
         print(m)
 
-    # Repeat runners, keyed on UltraSignup participant_id (fallback: name).
+    # Repeat runners, keyed on name (entrant lists for an upcoming edition carry no
+    # UltraSignup participant id, so name is the only key that spans every year).
     years = defaultdict(set)
     region_of = {}
     for r in rows:
-        key = r["participant_id"] or f"{r['first']} {r['last']}".lower()
+        key = runner_key(r)
         years[key].add(r["year"])
         region_of[key] = r["region"]
     repeats = {k: v for k, v in years.items() if len(v) > 1}
@@ -56,6 +63,10 @@ def main():
     for k in repeats:
         by_region[region_of[k]] += 1
     print("repeat runners by region:", dict(by_region))
+
+
+def runner_key(r):
+    return " ".join(f"{r['first']} {r['last']}".lower().split())
 
 
 if __name__ == "__main__":
