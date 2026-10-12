@@ -4,7 +4,7 @@ name: Refresh upcoming entrants
 # commit if anything changed. Past editions come from the name-free files in data/public/.
 on:
   schedule:
-    - cron: "0 15 * * 1"   # Mondays 15:00 UTC (8am Pacific in summer, 7am in winter)
+    - cron: "17 15 * * 1"  # Mondays 15:17 UTC (8:17am Pacific in summer, 7:17am in winter); off the hour, when GitHub drops fewer scheduled runs
   workflow_dispatch:
 
 permissions:
