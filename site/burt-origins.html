@@ -120,6 +120,7 @@ h2 { font: 600 var(--step-2)/1.1 var(--font-display); text-transform: uppercase;
 .rail-sub { font-size: var(--step--1); color: var(--muted); }
 .figs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; }
 .fig { display: grid; gap: 2px; min-width: 0; }
+.fig.wide { grid-column: 1 / -1; }
 .fig b { font: 600 var(--step-3)/1 var(--font-display); font-variant-numeric: tabular-nums; }
 .fig b small { font-size: var(--step-1); font-weight: 500; color: var(--muted); margin-left: 2px; }
 .fig span { font-size: 0.75rem; color: var(--muted); }
@@ -264,7 +265,8 @@ const REGION_SHORT = {"Bainbridge Island": "Bainbridge", "Kitsap County": "Rest 
   "Other WA": "Rest of WA", "Out of state": "Out of state"};
 const DISTS = ["55K", "110K", "100M"];
 const YEARS = [...new Set(DATA.runners.map(r => r.y))].sort();
-// An upcoming edition has a registration list but no results. "All years" means completed editions.
+// An upcoming edition has a registration list but no results. "All years" includes its registrants;
+// findings about race results use completed editions (DONE_YEARS) only.
 const UP = DATA.upcoming;
 const UP_YEAR = UP ? UP.year : null;
 const DONE_YEARS = YEARS.filter(y => y !== UP_YEAR);
@@ -285,7 +287,7 @@ try { const s = JSON.parse(localStorage.getItem("burt-origins") || "null"); if (
 function save() { try { localStorage.setItem("burt-origins", JSON.stringify(state)); } catch (e) {} }
 
 function match(r, s = state) {
-  return (s.year === "all" ? r.y !== UP_YEAR : r.y === s.year) && (s.dist === "All" || r.d === s.dist) && (s.dns || r.status !== "DNS");
+  return (s.year === "all" || r.y === s.year) && (s.dist === "All" || r.d === s.dist) && (s.dns || r.status !== "DNS");
 }
 const filtered = () => DATA.runners.filter(r => match(r));
 
@@ -462,14 +464,16 @@ function median(a) { if (!a.length) return NaN; const s = [...a].sort((x, y) => 
 
 function drawRail(rows) {
   const isUp = state.year === UP_YEAR;
-  const yearTxt = state.year === "all" ? `${DONE_YEARS[0]}–${DONE_YEARS[DONE_YEARS.length - 1]}`
+  const yearTxt = state.year === "all" ? `${YEARS[0]}–${YEARS[YEARS.length - 1]}`
     : isUp ? `${state.year} so far` : state.year;
   const distTxt = state.dist === "All" ? "All distances" : state.dist;
   document.getElementById("rail-title").textContent = `${yearTxt} · ${distTxt}`;
-  const starters = rows.filter(r => r.status !== "DNS").length, fin = rows.filter(r => r.status === "finished").length;
+  const raced = rows.filter(r => r.status !== "registered");
+  const starters = raced.filter(r => r.status !== "DNS").length, fin = raced.filter(r => r.status === "finished").length;
+  const reg = rows.length - raced.length;
   document.getElementById("rail-sub").textContent = isUp
     ? `Registered as of ${fmtDate(UP.asOf)} · race day ${fmtDate(UP.raceDate)}`
-    : rows.length ? `${starters} started · ${fin} finished`
+    : rows.length ? `${starters} started · ${fin} finished` + (reg ? ` · ${reg} registered for ${UP_YEAR}` : "")
     : (state.year === 2023 ? "2023 had only a 55K on UltraSignup." : "No entrants for this filter.");
   const capsWrap = document.getElementById("caps-wrap");
   capsWrap.hidden = !isUp;
@@ -486,11 +490,12 @@ function drawRail(rows) {
   const figs = [
     [rows.length, "", isUp ? "Registered" : "Entrants"],
     [rows.length ? fmtMi(median(mi)) : "–", rows.length ? "mi" : "", "Median trip"],
-    [far ? fmtMi(far.mi) : "–", far ? "mi" : "", far ? `Farthest: ${far.town}, ${far.st}` : "Farthest"],
+    [far ? fmtMi(far.mi) : "–", far ? "mi" : "", far ? `Farthest: ${far.town}, ${far.st}` : "Farthest", "wide"],
     [t.length, "", "Hometowns"],
+    [new Set(rows.map(r => r.st)).size, "", "States & provinces"],
   ];
-  document.getElementById("figs").innerHTML = figs.map(([v, u, l]) =>
-    `<div class="fig"><b>${v}${u ? `<small>${u}</small>` : ""}</b><span>${l}</span></div>`).join("");
+  document.getElementById("figs").innerHTML = figs.map(([v, u, l, cls]) =>
+    `<div class="fig${cls ? " " + cls : ""}"><b>${v}${u ? `<small>${u}</small>` : ""}</b><span>${l}</span></div>`).join("");
   document.getElementById("regions").innerHTML = REGIONS.map(r => {
     const n = rows.filter(x => x.region === r).length, p = pct(n, rows.length);
     return `<div class="reg"><span>${REGION_SHORT[r]}</span><span class="bar"><i style="width:${p}%;background:${regionVar(r)}"></i></span>` +
@@ -548,7 +553,7 @@ function drawStrip() {
     heads.append("text").attr("class", "strip-sub").attr("x", 14 + w + 10).attr("y", grp.top + 28).text(DIST_NAME[grp.d]);
   }
   rowsDef.forEach((row, ri) => {
-    const on = (state.year === "all" ? row.y !== UP_YEAR : row.y === state.year) && (state.dist === "All" || row.d === state.dist);
+    const on = (state.year === "all" || row.y === state.year) && (state.dist === "All" || row.d === state.dist);
     const g = s.append("g").attr("class", on ? "" : "row-off");
     g.append("text").attr("class", "rowlabel").attr("x", 30).attr("y", row.cy + 4).text(`${row.y}${row.y === UP_YEAR ? "*" : " "} n=${row.rs.length}`);
     g.append("line").attr("x1", L).attr("x2", Wd - R).attr("y1", row.cy).attr("y2", row.cy).attr("stroke", "var(--rule)")
@@ -574,7 +579,7 @@ function drawFindings() {
   const rep = DATA.repeats;
   const repLocal = (rep.byRegion["Bainbridge Island"] || 0) + (rep.byRegion["Kitsap County"] || 0);
   const items = [
-    `<b>The 100-miler draws from much farther away.</b> Median trip across all years: ${fmtMi(med("100M"))} mi for the 100M, ${fmtMi(med("110K"))} mi for the 110K, ${fmtMi(med("55K"))} mi for the 55K. Islanders are ${islandShare("55K")}% of 55K entrants but ${islandShare("100M")}% of 100M entrants.`,
+    `<b>The 100-miler draws from much farther away.</b> Median trip across ${DONE_YEARS[0]}–${DONE_YEARS[DONE_YEARS.length - 1]}: ${fmtMi(med("100M"))} mi for the 100M, ${fmtMi(med("110K"))} mi for the 110K, ${fmtMi(med("55K"))} mi for the 55K. Islanders are ${islandShare("55K")}% of 55K entrants but ${islandShare("100M")}% of 100M entrants.`,
     `<b>The field grew and spread out.</b> ${byYear.join("; ")} (Kitsap here includes Bainbridge). The 2023 edition was a small, mostly island 55K.`,
     `<b>Repeat runners are mostly local.</b> ${rep.repeat} of ${rep.unique} distinct runners entered in more than one year, and ${repLocal} of those ${rep.repeat} live in Kitsap County.`,
   ];
@@ -585,7 +590,7 @@ function drawFindings() {
       `${UP.returning} of them have run BURT before, and ${pct(reg.filter(r => r.region === "Bainbridge Island").length, reg.length)}% live on the island.`);
     document.getElementById("strip-note").textContent = ` * ${UP_YEAR} shows registrations as of ${fmtDate(UP.asOf)}.`;
     const note = document.getElementById("note-upcoming");
-    note.textContent = `${UP_YEAR} comes from UltraSignup's entrant list as of ${fmtDate(UP.asOf)}. It has no DNF or DNS data and isn't counted in "All years". Results replace it after the race.` +
+    note.textContent = `${UP_YEAR} comes from UltraSignup's entrant list as of ${fmtDate(UP.asOf)}. It has no DNF or DNS data. It's included in "All years" but not in the findings above, which cover finished races. Results replace it after the race.` +
       (UP.unmapped ? ` ${UP.unmapped} registrant${UP.unmapped > 1 ? "s have hometowns" : " has a hometown"} I couldn't place on the map yet.` : "");
     note.hidden = false;
   }
