@@ -12,7 +12,7 @@ from common import ROOT
 
 DATA = ROOT / "data"
 # Battle Point Park, Bainbridge Island, WA (start/finish)
-RACE_LAT, RACE_LON = 47.6683, -122.5463
+RACE_LAT, RACE_LON = 47.6630, -122.5773  # Battle Point Park, OpenStreetMap centroid
 
 KITSAP = ("WA", "035")
 KING = ("WA", "033")
