@@ -156,12 +156,15 @@ year,distance,status,geo_city,geo_state,lat,lon,region,miles
 2026,55K,finished,Tacoma,WA,47.25288,-122.44429,Other WA,29.0
 2026,55K,finished,Tacoma,WA,47.25288,-122.44429,Other WA,29.0
 2026,55K,finished,Tumwater,WA,47.00732,-122.90931,Other WA,47.9
+2027,100M,registered,Almont,CO,38.66471,-106.84615,Out of state,1004.3
 2027,100M,registered,Bremerton,WA,47.56732,-122.63264,Kitsap County,7.1
 2027,100M,registered,Centralia,WA,46.71621,-122.9543,Other WA,67.8
+2027,100M,registered,Chimacum,WA,48.01094,-122.77059,Other WA,25.7
 2027,100M,registered,Port Angeles,WA,48.11815,-123.43074,Other WA,50.5
 2027,100M,registered,Port Moody,BC,49.2838,-122.8317,Out of state,112.6
 2027,100M,registered,Seattle,WA,47.60621,-122.33207,King County,12.1
 2027,110K,registered,Bainbridge Island,WA,47.62621,-122.52124,Bainbridge Island,3.6
+2027,110K,registered,Bremerton,WA,47.56732,-122.63264,Kitsap County,7.1
 2027,110K,registered,Issaquah,WA,47.5301,-122.03262,King County,27.0
 2027,110K,registered,Lummi Island,WA,48.72455,-122.68629,Other WA,73.5
 2027,110K,registered,Pasadena,CA,34.14778,-118.14452,Out of state,961.7
@@ -169,8 +172,14 @@ year,distance,status,geo_city,geo_state,lat,lon,region,miles
 2027,110K,registered,Port Ludlow,WA,47.92537,-122.68349,Other WA,18.8
 2027,110K,registered,Seattle,WA,47.60621,-122.33207,King County,12.1
 2027,110K,registered,Seattle,WA,47.60621,-122.33207,King County,12.1
+2027,110K,registered,Seattle,WA,47.60621,-122.33207,King County,12.1
 2027,110K,registered,Tacoma,WA,47.25288,-122.44429,Other WA,29.0
 2027,110K,registered,Vancouver,WA,45.63873,-122.66149,Other WA,139.9
+2027,55K,registered,Austin,TX,30.26715,-97.74306,Out of state,1781.2
+2027,55K,registered,Bainbridge Island,WA,47.62621,-122.52124,Bainbridge Island,3.6
+2027,55K,registered,Bainbridge Island,WA,47.62621,-122.52124,Bainbridge Island,3.6
+2027,55K,registered,Bainbridge Island,WA,47.62621,-122.52124,Bainbridge Island,3.6
+2027,55K,registered,Bainbridge Island,WA,47.62621,-122.52124,Bainbridge Island,3.6
 2027,55K,registered,Bainbridge Island,WA,47.62621,-122.52124,Bainbridge Island,3.6
 2027,55K,registered,Bainbridge Island,WA,47.62621,-122.52124,Bainbridge Island,3.6
 2027,55K,registered,Bainbridge Island,WA,47.62621,-122.52124,Bainbridge Island,3.6
@@ -193,10 +202,15 @@ year,distance,status,geo_city,geo_state,lat,lon,region,miles
 2027,55K,registered,Bainbridge Island,WA,47.62621,-122.52124,Bainbridge Island,3.6
 2027,55K,registered,Bremerton,WA,47.56732,-122.63264,Kitsap County,7.1
 2027,55K,registered,Issaquah,WA,47.5301,-122.03262,King County,27.0
+2027,55K,registered,Issaquah,WA,47.5301,-122.03262,King County,27.0
+2027,55K,registered,Kingston,WA,47.7985,-122.49806,Kitsap County,10.1
 2027,55K,registered,Monument,CO,39.09166,-104.87276,Out of state,1064.4
+2027,55K,registered,Mount Vernon,WA,48.42122,-122.33405,Other WA,53.6
+2027,55K,registered,Olympia,WA,47.04491,-122.90169,Other WA,45.3
 2027,55K,registered,Poulsbo,WA,47.73593,-122.64654,Kitsap County,6.0
 2027,55K,registered,Poulsbo,WA,47.73593,-122.64654,Kitsap County,6.0
 2027,55K,registered,Redmond,WA,47.67399,-122.12151,King County,21.2
 2027,55K,registered,Rio Rico,AZ,31.47148,-110.97648,Out of state,1274.8
+2027,55K,registered,San Francisco,CA,37.77493,-122.41942,Out of state,683.3
 2027,55K,registered,Silverdale,WA,47.64454,-122.69487,Kitsap County,5.6
 2027,55K,registered,Tumwater,WA,47.00732,-122.90931,Other WA,47.9
