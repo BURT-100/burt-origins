@@ -156,12 +156,16 @@ year,distance,status,geo_city,geo_state,lat,lon,region,miles
 2026,55K,finished,Tacoma,WA,47.25288,-122.44429,Other WA,29.0
 2026,55K,finished,Tacoma,WA,47.25288,-122.44429,Other WA,29.0
 2026,55K,finished,Tumwater,WA,47.00732,-122.90931,Other WA,47.9
+2027,100M,registered,Aberdeen,WA,46.97537,-123.81572,Other WA,75.0
 2027,100M,registered,Almont,CO,38.66471,-106.84615,Out of state,1004.3
+2027,100M,registered,Bainbridge Island,WA,47.62621,-122.52124,Bainbridge Island,3.6
 2027,100M,registered,Bremerton,WA,47.56732,-122.63264,Kitsap County,7.1
 2027,100M,registered,Centralia,WA,46.71621,-122.9543,Other WA,67.8
 2027,100M,registered,Chimacum,WA,48.01094,-122.77059,Other WA,25.7
 2027,100M,registered,Port Angeles,WA,48.11815,-123.43074,Other WA,50.5
 2027,100M,registered,Port Moody,BC,49.2838,-122.8317,Out of state,112.6
+2027,100M,registered,Seattle,WA,47.60621,-122.33207,King County,12.1
+2027,100M,registered,Seattle,WA,47.60621,-122.33207,King County,12.1
 2027,100M,registered,Seattle,WA,47.60621,-122.33207,King County,12.1
 2027,110K,registered,Bainbridge Island,WA,47.62621,-122.52124,Bainbridge Island,3.6
 2027,110K,registered,Bremerton,WA,47.56732,-122.63264,Kitsap County,7.1
