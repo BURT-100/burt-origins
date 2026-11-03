@@ -192,8 +192,8 @@ td.n, th.n { text-align: right; }
 <div class="wrap">
   <header>
     <img class="logo" src="__LOGO_URI__" width="730" height="299" alt="BURT 100, Bainbridge Ultra Running Team">
-    <h1>How far do BURT runners travel?</h1>
-    <p class="lede">Every entrant's hometown since 2023, measured in a straight line to the start at Battle Point Park.<span id="lede-fact"></span></p>
+    <h1>Where BURT runners come from</h1>
+    <p class="lede">Hometowns of everyone who has entered the BURT 100 since 2023, and how far each is from the start at Battle Point Park.</p>
   </header>
 
   <div class="controls" role="group" aria-label="Filters">
@@ -672,9 +672,6 @@ function drawFindings() {
       (UP.unmapped ? ` ${UP.unmapped} registrant${UP.unmapped > 1 ? "s' hometowns aren't" : "'s hometown isn't"} on the map yet.` : "");
     note.hidden = false;
   }
-  const done = DATA.runners.filter(r => r.y !== UP_YEAR), far = done.reduce((a, b) => (b.mi > a.mi ? b : a));
-  document.getElementById("lede-fact").textContent =
-    ` Half of all entrants live within ${Math.round(median(done.map(r => r.mi)))} miles of it. The longest trip was ${d3.format(",")(Math.round(far.mi))} miles, from ${far.town}, ${far.st}.`;
   document.getElementById("findings").innerHTML = items.map(t => `<li>${t}</li>`).join("");
 }
 
