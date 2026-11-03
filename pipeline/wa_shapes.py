@@ -1,4 +1,5 @@
-"""Extract WA county polygons from Census cb_2023_us_county_500k into data/ref/wa_counties.json.
+"""Extract WA county polygons (data/ref/wa_counties.json) and their shoreline vs boundary lines
+(data/ref/wa_lines.json) from Census cb_2023_us_county_500k.
 
 The 1:10M us-atlas shoreline is too coarse for Puget Sound (Bainbridge disappears), so the
 local view uses these 1:500k shapes, lightly simplified.
@@ -67,6 +68,69 @@ def main():
     out = {"type": "FeatureCollection", "features": feats}
     (REF / "wa_counties.json").write_text(json.dumps(out, separators=(",", ":")))
     print(f"{len(feats)} WA counties, {(REF / 'wa_counties.json').stat().st_size / 1024:.0f} KB")
+    write_lines(sf, fields)
+
+
+def write_lines(sf, fields):
+    """Split WA county outlines into shoreline and boundary lines -> data/ref/wa_lines.json.
+
+    Uses the unsimplified shapes, where neighbouring counties share identical vertices: an edge
+    that appears in two counties (WA, OR or ID) is a boundary, an edge in only one is shoreline.
+    The Canada border has no neighbour in this file, so edges along 49°N count as boundary.
+    Each boundary is kept once, by the WA county with the lowest FIPS code that touches it.
+    """
+    rings = []  # (fips, [points]) for WA, OR and ID counties
+    for sr in sf.iterShapeRecords():
+        rec = dict(zip(fields, sr.record))
+        if rec["STATEFP"] not in ("53", "41", "16"):
+            continue
+        shp = sr.shape
+        parts = list(shp.parts) + [len(shp.points)]
+        for a, b in zip(parts, parts[1:]):
+            rings.append((rec["STATEFP"] + rec["COUNTYFP"], [(round(x, 6), round(y, 6)) for x, y in shp.points[a:b]]))
+    owners = {}
+    for fips, pts in rings:
+        for p, q in zip(pts, pts[1:]):
+            owners.setdefault(frozenset((p, q)), set()).add(fips)
+
+    coast, borders = [], []
+    for fips, pts in rings:
+        if not fips.startswith("53"):
+            continue
+        run, kind = [pts[0]], None
+        for p, q in zip(pts, pts[1:]):
+            own = owners[frozenset((p, q))]
+            on_canada = abs(p[1] - 49.0) < 0.003 and abs(q[1] - 49.0) < 0.003
+            if len(own) == 1 and not on_canada:
+                k = "coast"
+            else:
+                wa = sorted(o for o in own if o.startswith("53"))
+                k = "border" if fips == wa[0] else None  # someone else draws it
+            if k != kind and len(run) > 1:
+                (coast if kind == "coast" else borders if kind == "border" else []).append(run)
+            if k != kind:
+                run = [p]
+            run.append(q)
+            kind = k
+        if len(run) > 1:
+            (coast if kind == "coast" else borders if kind == "border" else []).append(run)
+
+    def simplify(lines):
+        out = []
+        for line in lines:
+            if line[0] == line[-1]:  # closed loop (e.g. an island): simplify as two halves
+                mid = len(line) // 2
+                line = rdp(line[:mid + 1], TOL)[:-1] + rdp(line[mid:], TOL)
+            else:
+                line = rdp(line, TOL)
+            if len(line) >= 2:
+                out.append([[round(x, 4), round(y, 4)] for x, y in line])
+        return out
+    lines = {"coast": {"type": "MultiLineString", "coordinates": simplify(coast)},
+             "borders": {"type": "MultiLineString", "coordinates": simplify(borders)}}
+    (REF / "wa_lines.json").write_text(json.dumps(lines, separators=(",", ":")))
+    print(f"wa_lines.json: {len(lines['coast']['coordinates'])} shore lines, "
+          f"{len(lines['borders']['coordinates'])} boundary lines, {(REF / 'wa_lines.json').stat().st_size / 1024:.0f} KB")
 
 
 if __name__ == "__main__":

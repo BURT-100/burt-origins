@@ -3,7 +3,10 @@
 Reads only the name-free data in data/public/ and upcoming.json, so the weekly GitHub
 Action can run it without access to raw results.
 """
+import base64
 import json
+import pathlib
+import sys
 
 import public
 from common import ROOT
@@ -73,8 +76,23 @@ def main():
     world["objects"].pop("land", None)
 
     payload = {"runners": runners, "repeats": repeats, "upcoming": upcoming, "us": us, "world": world,
-               "wa": json.load(open(REF / "wa_counties.json"))}
-    html = TEMPLATE.read_text().replace("/*__DATA__*/null", json.dumps(payload, separators=(",", ":")))
+               "wa": json.load(open(REF / "wa_counties.json")),
+               "waLines": json.load(open(REF / "wa_lines.json"))}
+    data = json.dumps(payload, separators=(",", ":"))
+    # BURT 100 logo (from the race's site), inlined so each page stays a single file.
+    logo = "data:image/png;base64," + base64.b64encode((ROOT / "assets" / "burt100-logo.png").read_bytes()).decode()
+    fill = lambda t: t.replace("/*__DATA__*/null", data).replace("__LOGO_URI__", logo)
+
+    # Preview mode: render another template to one standalone file and stop (used for design mocks).
+    if "--template" in sys.argv:
+        args = sys.argv[sys.argv.index("--template") + 1:]
+        template, out = pathlib.Path(args[0]), pathlib.Path(args[1])
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(standalone_page(fill(template.read_text())))
+        print(f"wrote {out} ({out.stat().st_size / 1024:.0f} KB)")
+        return
+
+    html = fill(TEMPLATE.read_text())
     # site/: artifact source (the artifact host adds the document skeleton on publish).
     SITE.mkdir(exist_ok=True)
     out = SITE / "burt-origins.html"
@@ -82,15 +100,18 @@ def main():
     print(f"wrote {out} ({out.stat().st_size / 1024:.0f} KB)")
 
     # docs/: standalone page for GitHub Pages, with its own skeleton.
-    head, sep, body = html.partition("</style>")
-    standalone = ('<!doctype html>\n<html lang="en">\n<head>\n'
-                  '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
-                  + head + sep
-                  + "\n</head>\n<body>\n" + body.lstrip("\n") + "\n</body>\n</html>\n")
     DOCS.mkdir(exist_ok=True)
     page = DOCS / "index.html"
-    page.write_text(standalone)
+    page.write_text(standalone_page(html))
     print(f"wrote {page} ({page.stat().st_size / 1024:.0f} KB)")
+
+
+def standalone_page(html: str) -> str:
+    """Wrap artifact-style HTML (no doctype/head/body) in its own document skeleton."""
+    head, sep, body = html.partition("</style>")
+    return ('<!doctype html>\n<html lang="en">\n<head>\n'
+            '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
+            + head + sep + "\n</head>\n<body>\n" + body.lstrip("\n") + "\n</body>\n</html>\n")
 
 
 if __name__ == "__main__":

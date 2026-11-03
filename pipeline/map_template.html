@@ -2,186 +2,198 @@
 <title>BURT 100 Runner Origins</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..600&family=Overpass:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: masthead + filter bar, then map (wide) beside a stats rail, then a full-width
-   "every trip" strip chart. Island-map palette: paper land, slate water, evergreen controls,
-   and one amber-to-rust ramp that darkens (light) / brightens (dark) with distance from home. */
+/* Layout: a single column read like a printed map sheet. Masthead, filter tabs, the map in a
+   neatline frame beside a plain stats column, then the trip chart and notes.
+   Palette borrowed from USGS topographic quads: woodland-green land, blue water with blue
+   shorelines, brown dashed boundaries, black ink. The amber-to-rust ramp marks distance from home. */
 :root {
-  --bg: #f3f5f4;
-  --panel: #fbfcfb;
-  --fg: #17201f;
-  --muted: #59625f;
-  --rule: #d5dbd8;
-  --land: #e9ece7;
-  --land-line: #c3cac5;
-  --water: #cfdee5;
-  --accent: #1f5a4a;
-  --accent-ink: #ffffff;
+  --paper: #fafaf6;
+  --ink: #1c211e;
+  --ink-2: #565d57;
+  --rule: #d8dbd2;
+  --land: #dde8cc;          /* Washington: woodland tint */
+  --land-far: #eceee5;      /* everywhere else: open-land tint */
+  --land-edge: #c6cbbb;
+  --water: #cde2ec;
+  --shore: #3f86b0;
+  --water-ink: #2a6a93;
+  --boundary: #8e7a62;
+  --accent: #2a6a93;
   --r1: #e3a04a; --r2: #d17f35; --r3: #b9602a; --r4: #924222; --r5: #652a18;
-  --font-display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
-  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-data: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --step--1: 0.8125rem; --step-0: 0.9375rem; --step-1: 1.125rem; --step-2: 1.5rem;
-  --step-3: 2.25rem; --step-4: clamp(2.5rem, 6vw, 3.75rem);
+  --serif: "Newsreader", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --sans: "Overpass", "Franklin Gothic", "Segoe UI", system-ui, sans-serif;
+  --s-sm: 0.8125rem; --s-base: 1rem; --s-md: 1.1875rem; --s-lg: 1.625rem; --s-xl: 2.375rem;
+  --s-hero: clamp(2.25rem, 5.2vw, 3.5rem);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #111617; --panel: #161c1d; --fg: #e6ebe9; --muted: #9aa5a2; --rule: #2b3436;
-    --land: #1f2728; --land-line: #3a4547; --water: #0c1214; --accent: #74c4a8; --accent-ink: #0d1a16;
+    --paper: #131715; --ink: #e4e7e2; --ink-2: #9ba29c; --rule: #2c332f;
+    --land: #223024; --land-far: #1b201d; --land-edge: #313a33; --water: #0e1a21; --shore: #4f8fb5;
+    --water-ink: #84b7d6; --boundary: #776b5c; --accent: #84b7d6;
     --r1: #7a3a20; --r2: #a5502a; --r3: #cc6c34; --r4: #e68d48; --r5: #f5b569;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #111617; --panel: #161c1d; --fg: #e6ebe9; --muted: #9aa5a2; --rule: #2b3436;
-  --land: #1f2728; --land-line: #3a4547; --water: #0c1214; --accent: #74c4a8; --accent-ink: #0d1a16;
+  --paper: #131715; --ink: #e4e7e2; --ink-2: #9ba29c; --rule: #2c332f;
+  --land: #223024; --land-far: #1b201d; --land-edge: #313a33; --water: #0e1a21; --shore: #4f8fb5;
+  --water-ink: #84b7d6; --boundary: #776b5c; --accent: #84b7d6;
   --r1: #7a3a20; --r2: #a5502a; --r3: #cc6c34; --r4: #e68d48; --r5: #f5b569;
   color-scheme: dark;
 }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .logo { filter: invert(1); } }
+:root[data-theme="dark"] .logo { filter: invert(1); }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-body { background: var(--bg); color: var(--fg); font: 400 var(--step-0)/1.5 var(--font-body); }
-.wrap { max-width: 1240px; margin: 0 auto; padding-inline: max(16px, 3vw); padding-block: 28px 56px;
-  display: grid; gap: 28px; }
+body { background: var(--paper); color: var(--ink); font: 400 var(--s-base)/1.55 var(--sans); }
+.wrap { max-width: 1200px; margin: 0 auto; padding-inline: max(16px, 3vw); padding-block: 36px 64px;
+  display: grid; gap: 32px; }
+a { color: var(--accent); }
 
-header { display: grid; gap: 10px; }
-.eyebrow { font: 500 var(--step--1)/1.3 var(--font-data); color: var(--muted); letter-spacing: 0.04em; }
-h1 { font: 700 var(--step-4)/0.95 var(--font-display); text-transform: uppercase; letter-spacing: 0.01em;
-  margin: 0; text-wrap: balance; }
-.lede { margin: 0; max-width: 64ch; color: var(--muted); }
-h2 { font: 600 var(--step-2)/1.1 var(--font-display); text-transform: uppercase; letter-spacing: 0.02em; margin: 0; }
+header { display: grid; gap: 12px; max-width: 760px; }
+.logo { display: block; width: clamp(220px, 38vw, 340px); height: auto; margin-bottom: 8px; }
+.kicker { margin: 0; font: 600 var(--s-sm)/1.3 var(--sans); color: var(--ink-2); }
+h1 { margin: 0; font: 600 var(--s-hero)/1.04 var(--serif); font-optical-sizing: auto; letter-spacing: -0.01em; text-wrap: balance; }
+.lede { margin: 0; font: 400 var(--s-md)/1.5 var(--serif); color: var(--ink-2); max-width: 62ch; }
+h2 { margin: 0; font: 600 var(--s-lg)/1.15 var(--serif); letter-spacing: -0.005em; text-wrap: balance; }
 
-.controls { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: end;
-  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg);
-  padding-block: 10px; border-bottom: 1px solid var(--rule); }
-.ctl { display: grid; gap: 6px; min-width: 0; max-width: 100%; }
+/* Filters: plain text tabs, the current one underlined in ink. */
+.controls { display: flex; flex-wrap: wrap; gap: 12px 40px; align-items: end;
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--paper);
+  padding-block: 12px; border-bottom: 1px solid var(--ink); }
 @media (max-width: 560px) { .controls { position: static; } }
-@media (max-width: 480px) {
-  .controls .seg button { padding: 8px 10px; font-size: var(--step-0); }
-}
-.ctl-label { font: 500 0.6875rem/1 var(--font-data); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
-/* Buttons sit on a rule-colored ground with 1px gaps, so the dividers stay clean when a group wraps. */
-.seg { display: inline-flex; flex-wrap: wrap; gap: 1px; max-width: 100%; border: 1px solid var(--rule);
-  border-radius: 6px; overflow: hidden; background: var(--rule); }
-.seg button { font: 600 var(--step-1)/1 var(--font-display); letter-spacing: 0.03em; color: var(--fg);
-  background: var(--panel); border: 0; padding: 8px 13px; flex: 1 0 auto; cursor: pointer; font-variant-numeric: tabular-nums; }
-.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
-.seg button.up { font-style: italic; }
-.seg button.up:not([aria-pressed="true"]) { color: var(--accent); }
-.seg button:focus-visible, .chk input:focus-visible, .linkbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.toggles { display: flex; gap: 16px; flex-wrap: wrap; padding-bottom: 6px; }
-.chk { display: inline-flex; gap: 6px; align-items: center; font-size: var(--step--1); cursor: pointer; }
-.chk input { accent-color: var(--accent); }
+.ctl { display: grid; gap: 2px; min-width: 0; max-width: 100%; }
+.ctl-label { font: 400 var(--s-sm)/1.2 var(--sans); color: var(--ink-2); }
+.seg { display: flex; flex-wrap: wrap; column-gap: 18px; max-width: 100%; }
+.seg button { font: 600 var(--s-base)/1 var(--sans); color: var(--ink-2); background: none; border: 0;
+  border-bottom: 2px solid transparent; padding: 8px 0 6px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.seg button:hover { color: var(--ink); }
+.seg button[aria-pressed="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+.seg button.up { font-style: italic; font-family: var(--serif); font-size: var(--s-md); font-weight: 500; padding-bottom: 5px; }
+.seg button:focus-visible, .chk input:focus-visible, .linkbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.toggles { display: flex; gap: 18px; flex-wrap: wrap; padding-bottom: 7px; }
+.chk { display: inline-flex; gap: 6px; align-items: center; font-size: var(--s-sm); color: var(--ink-2); cursor: pointer; }
+.chk input { accent-color: var(--ink); }
 
-.main { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; }
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 36px; align-items: start; }
 @media (max-width: 900px) { .main { grid-template-columns: minmax(0, 1fr); } }
 
-.mapbox { position: relative; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--water); }
+/* The map sits in a neatline: a hairline ink frame, as on a printed quad. */
+.mapfig { margin: 0; display: grid; gap: 8px; min-width: 0; }
+.mapbox { position: relative; border: 1px solid var(--ink); background: var(--water); }
 .mapbox svg { display: block; width: 100%; height: auto; touch-action: none; cursor: grab; }
 .mapbox svg:active { cursor: grabbing; }
-.land { fill: var(--land); stroke: var(--land-line); stroke-width: 0.6; vector-effect: non-scaling-stroke; }
-.land.home { fill: color-mix(in oklab, var(--land), var(--r1) 14%); }
-.state-line { fill: none; stroke: var(--land-line); stroke-width: 0.9; vector-effect: non-scaling-stroke; }
-.trip { fill: none; stroke: var(--fg); stroke-opacity: 0.22; stroke-width: 1; vector-effect: non-scaling-stroke; }
-.town { stroke: var(--panel); stroke-width: 2; cursor: pointer; }
-.town:hover { stroke: var(--fg); }
-.town-label { font: 500 11.5px/1 var(--font-body); fill: var(--fg); paint-order: stroke; stroke: var(--land);
+.land { stroke: none; }
+.land.wa { fill: var(--land); }
+.land.far { fill: var(--land-far); stroke: var(--land-edge); stroke-width: 0.7; vector-effect: non-scaling-stroke; }
+.shore { fill: none; stroke: var(--shore); stroke-width: 0.9; vector-effect: non-scaling-stroke; }
+.boundary { fill: none; stroke: var(--boundary); stroke-width: 0.8; stroke-dasharray: 5 2 1 2; vector-effect: non-scaling-stroke; }
+.water-label { font: italic 500 13px var(--serif); fill: var(--water-ink); letter-spacing: 0.14em; pointer-events: none; }
+.water-label.big { font-size: 15px; letter-spacing: 0.22em; }
+.trip { fill: none; stroke: var(--ink); stroke-opacity: 0.2; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.town { stroke: var(--paper); stroke-width: 1.5; cursor: pointer; }
+.town:hover { stroke: var(--ink); }
+.town-label { font: 600 11.5px/1 var(--sans); fill: var(--ink); paint-order: stroke; stroke: var(--land);
   stroke-width: 3.5px; stroke-linejoin: round; pointer-events: none; }
-.start-mark { fill: var(--accent); stroke: var(--panel); stroke-width: 2; }
-.start-label { font: 600 12px/1 var(--font-data); fill: var(--accent); paint-order: stroke; stroke: var(--land);
+.start-mark { fill: var(--ink); stroke: var(--paper); stroke-width: 1.5; }
+.start-label { font: italic 600 13px/1 var(--serif); fill: var(--ink); paint-order: stroke; stroke: var(--land);
   stroke-width: 4px; stroke-linejoin: round; pointer-events: none; }
-.mapbar { position: absolute; left: 10px; right: 10px; top: 10px; display: flex; flex-wrap: wrap; gap: 8px;
+.mapbar { position: absolute; left: 10px; right: 10px; top: 8px; display: flex; flex-wrap: wrap; gap: 8px 16px;
   justify-content: space-between; align-items: start; pointer-events: none; }
 .mapbar > * { pointer-events: auto; }
-.mapbar .seg button { font-size: var(--step-0); padding: 7px 10px; }
-.offview { font-size: var(--step--1); background: var(--panel); border: 1px solid var(--rule); border-radius: 6px;
-  padding: 6px 10px; }
+.mapbar .seg { background: var(--paper); padding: 0 10px; border: 1px solid var(--ink); column-gap: 14px; }
+.mapbar .seg button { font-size: var(--s-sm); padding: 6px 0 4px; }
+.offview { font-size: var(--s-sm); background: var(--paper); border: 1px solid var(--ink); padding: 5px 10px; }
 .linkbtn { font: inherit; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer;
   text-decoration: underline; text-underline-offset: 2px; font-weight: 600; }
-/* Legend is a strip under the map, so it never hides a town. */
-.maplegend { background: var(--panel); border-top: 1px solid var(--rule); padding: 8px 12px;
-  display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 0.75rem; }
-.maplegend .row { display: flex; gap: 7px; align-items: center; }
-.sw { width: 11px; height: 11px; border-radius: 50%; flex: none; }
+/* Legend and scale bar sit under the frame, like a map's marginal information. */
+.margin { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 24px; font-size: var(--s-sm); color: var(--ink-2); }
+.maplegend { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.maplegend .row { display: flex; gap: 6px; align-items: center; }
+.sw { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.scalebar { display: flex; align-items: end; gap: 8px; font-variant-numeric: tabular-nums; }
+.scalebar svg { display: block; overflow: visible; }
+.scalebar rect { stroke: var(--ink); stroke-width: 1; }
+.scalebar text { font: 400 11px var(--sans); fill: var(--ink-2); }
+.figcap { font: italic 400 var(--s-base)/1.4 var(--serif); color: var(--ink-2); }
 @media (max-width: 560px) {
-  /* Phones: controls sit in a strip above the map instead of covering it. */
   .mapbox { display: flex; flex-direction: column; }
-  .mapbar { order: -1; position: static; padding: 8px; background: var(--panel); border-bottom: 1px solid var(--rule); }
-  .mapbar .seg button { font-size: var(--step--1); padding: 6px 8px; }
+  .mapbar { order: -1; position: static; padding: 6px 8px; background: var(--paper); border-bottom: 1px solid var(--ink); }
+  .mapbar .seg { border: 0; padding: 0; }
   .offview { border: 0; padding: 0; background: none; }
 }
 
-.rail { display: grid; gap: 20px; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 18px; }
-/* Grid children default to their content's width; let the town table scroll inside the panel instead. */
+/* Stats column: no box, just type and rules. */
+.rail { display: grid; gap: 22px; align-content: start; }
 .rail > * { min-width: 0; }
-.rail-head { display: grid; gap: 2px; }
-.rail-title { font: 600 var(--step-2)/1 var(--font-display); text-transform: uppercase; letter-spacing: 0.02em; }
-.rail-sub { font-size: var(--step--1); color: var(--muted); }
-.figs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; }
-.fig { display: grid; gap: 2px; min-width: 0; }
+.rail-head { display: grid; gap: 2px; padding-bottom: 10px; border-bottom: 1px solid var(--ink); }
+.rail-title { font: 600 var(--s-lg)/1.15 var(--serif); }
+.rail-sub { font-size: var(--s-sm); color: var(--ink-2); }
+.figs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 14px; }
+.fig { display: grid; gap: 0; min-width: 0; }
 .fig.wide { grid-column: 1 / -1; }
-.fig b { font: 600 var(--step-3)/1 var(--font-display); font-variant-numeric: tabular-nums; }
-.fig b small { font-size: var(--step-1); font-weight: 500; color: var(--muted); margin-left: 2px; }
-.fig span { font-size: 0.75rem; color: var(--muted); }
-.regions { display: grid; gap: 7px; }
-.reg { display: grid; grid-template-columns: 112px minmax(0, 1fr) 70px; gap: 8px; align-items: center; font-size: var(--step--1); }
-.reg .bar { height: 10px; background: var(--rule); border-radius: 2px; overflow: hidden; }
-.reg .bar i { display: block; height: 100%; border-radius: 0 3px 3px 0; }
-.reg .v { font-family: var(--font-data); font-size: 0.75rem; text-align: right; font-variant-numeric: tabular-nums; }
-.caps { display: grid; gap: 7px; }
-.cap { display: grid; grid-template-columns: 44px minmax(0, 1fr) 54px; gap: 8px; align-items: center; font-size: var(--step--1); }
-.cap .bar { height: 10px; border-radius: 2px; border: 1px dashed var(--land-line); overflow: hidden; }
-.cap .bar i { display: block; height: 100%; background: var(--accent); }
-.cap .v { font-family: var(--font-data); font-size: 0.75rem; text-align: right; font-variant-numeric: tabular-nums; }
-.towns { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: var(--step--1); }
-.towns li { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dotted var(--rule); padding-bottom: 3px; }
-.towns li span:last-child { font-family: var(--font-data); font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.sec-label { font: 500 0.6875rem/1 var(--font-data); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.fig b { font: 500 var(--s-xl)/1.05 var(--serif); font-variant-numeric: lining-nums tabular-nums; }
+.fig b small { font: 400 var(--s-md) var(--serif); color: var(--ink-2); margin-left: 3px; }
+.fig span { font-size: var(--s-sm); color: var(--ink-2); }
+.sec-label { font: 600 var(--s-sm)/1.2 var(--sans); color: var(--ink); padding-bottom: 6px; border-bottom: 1px solid var(--rule); }
+.regions, .caps { display: grid; gap: 6px; }
+.reg { display: grid; grid-template-columns: 104px minmax(0, 1fr) 64px; gap: 8px; align-items: center; font-size: var(--s-sm); }
+.reg .bar { height: 8px; background: color-mix(in oklab, var(--rule), transparent 30%); overflow: hidden; }
+.reg .bar i { display: block; height: 100%; }
+.reg .v, .cap .v { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.cap { display: grid; grid-template-columns: 44px minmax(0, 1fr) 54px; gap: 8px; align-items: center; font-size: var(--s-sm); }
+.cap .bar { height: 8px; border: 1px solid var(--ink); overflow: hidden; }
+.cap .bar i { display: block; height: 100%; background: var(--ink); }
+.towns { margin: 0; padding: 0; list-style: none; display: grid; font-size: var(--s-sm); }
+.towns li { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--rule); padding-block: 4px; }
+.towns li span:last-child { color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 .strip-sec { display: grid; gap: 10px; }
-.strip-sec p { margin: 0; color: var(--muted); max-width: 70ch; }
-.strip-scroll { overflow-x: auto; border: 1px solid var(--rule); border-radius: 8px; background: var(--panel); }
+.strip-sec p { margin: 0; color: var(--ink-2); max-width: 70ch; }
+.strip-scroll { overflow-x: auto; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
 .strip-scroll svg { display: block; min-width: 640px; width: 100%; height: auto; }
-.axis text, .rowlabel { font: 400 11px var(--font-data); fill: var(--muted); }
-.strip-band { fill: var(--bg); }
-.strip-head { font: 700 26px var(--font-display); fill: var(--fg); letter-spacing: 0.02em; }
+.axis text, .rowlabel { font: 400 11.5px var(--sans); fill: var(--ink-2); font-variant-numeric: tabular-nums; }
+.strip-band { fill: transparent; }
+.strip-head { font: 600 26px var(--serif); fill: var(--ink); }
 .strip-head.sel { fill: var(--accent); }
-.strip-sub { font: 500 12px var(--font-data); fill: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
+.strip-sub { font: italic 400 14px var(--serif); fill: var(--ink-2); }
 .grid line { stroke: var(--rule); }
-.dot { stroke: var(--panel); stroke-width: 1.5; }
-.med { stroke: var(--fg); stroke-width: 2; }
-.medlabel { font: 500 10.5px var(--font-data); fill: var(--fg); }
+.dot { stroke: var(--paper); stroke-width: 1.2; }
+.med { stroke: var(--ink); stroke-width: 2; }
+.medlabel { font: 600 10.5px var(--sans); fill: var(--ink); }
 .row-off { opacity: 0.22; }
 
-.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 24px; }
-.notes section { display: grid; gap: 8px; align-content: start; min-width: 0; }
-.notes ul { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; }
-.notes p { margin: 0; }
-.small { font-size: var(--step--1); color: var(--muted); }
-details { font-size: var(--step--1); }
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 32px; }
+.notes section { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.notes ul { margin: 0; padding-left: 1.1em; display: grid; gap: 8px; }
+#findings { font: 400 var(--s-md)/1.5 var(--serif); }
+#findings b { font-weight: 600; }
+.small { font-size: var(--s-sm); color: var(--ink-2); }
+details { font-size: var(--s-sm); }
 details summary { cursor: pointer; color: var(--accent); font-weight: 600; }
 .tbl-wrap { overflow-x: auto; margin-top: 8px; }
 table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
-th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th, td { text-align: left; padding: 4px 8px 4px 0; border-bottom: 1px solid var(--rule); white-space: nowrap; }
 td:first-child { white-space: normal; }
 @media (max-width: 480px) { #town-table th:nth-child(2), #town-table td:nth-child(2) { display: none; } }
-th { font: 500 0.6875rem var(--font-data); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-td.n { text-align: right; font-family: var(--font-data); }
+th { font: 600 var(--s-sm) var(--sans); color: var(--ink-2); border-bottom-color: var(--ink); }
+td.n, th.n { text-align: right; }
 
-#tip { position: fixed; z-index: 20; pointer-events: none; background: var(--panel); color: var(--fg);
-  border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; font-size: var(--step--1); line-height: 1.35;
-  box-shadow: 0 4px 16px rgb(0 0 0 / 0.14); max-width: 260px; }
-#tip b { font-weight: 600; }
-#tip .m { font-family: var(--font-data); font-size: 0.75rem; color: var(--muted); }
+#tip { position: fixed; z-index: 20; pointer-events: none; background: var(--paper); color: var(--ink);
+  border: 1px solid var(--ink); padding: 8px 10px; font-size: var(--s-sm); line-height: 1.4; max-width: 260px;
+  box-shadow: 3px 3px 0 color-mix(in oklab, var(--ink), transparent 85%); }
+#tip b { font: 600 var(--s-base) var(--serif); }
+#tip .m { color: var(--ink-2); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">BURT 100 · Bainbridge Island, WA · Start/finish: Battle Point Park · Held each February</div>
-    <h1>Where BURT runners come from</h1>
-    <p class="lede">Every entrant's hometown from UltraSignup results, 2023–2026, measured as a straight-line distance to the start line. Pick a year and a distance to see how far the field travels.</p>
+    <img class="logo" src="__LOGO_URI__" width="730" height="299" alt="BURT 100, Bainbridge Ultra Running Team">
+    <h1>How far do BURT runners travel?</h1>
+    <p class="lede">Every entrant's hometown since 2023, measured in a straight line to the start at Battle Point Park.<span id="lede-fact"></span></p>
   </header>
 
   <div class="controls" role="group" aria-label="Filters">
@@ -191,19 +203,25 @@ td.n { text-align: right; font-family: var(--font-data); }
       <div class="seg" id="dist" aria-labelledby="lbl-dist"></div></div>
     <div class="toggles">
       <label class="chk"><input type="checkbox" id="opt-lines" checked> Lines to the start</label>
-      <label class="chk"><input type="checkbox" id="opt-dns" checked> Include non-starters (DNS)</label>
+      <label class="chk"><input type="checkbox" id="opt-dns" checked> Include non-starters</label>
     </div>
   </div>
 
   <div class="main">
-    <div class="mapbox">
-      <svg id="map" viewBox="0 0 960 720" role="img" aria-label="Map of entrant hometowns"></svg>
-      <div class="mapbar">
-        <div class="seg" id="view" aria-label="Map view"></div>
-        <div class="offview" id="offview" hidden></div>
+    <figure class="mapfig">
+      <div class="mapbox">
+        <svg id="map" viewBox="0 0 960 720" role="img" aria-label="Map of entrant hometowns"></svg>
+        <div class="mapbar">
+          <div class="seg" id="view" aria-label="Map view"></div>
+          <div class="offview" id="offview" hidden></div>
+        </div>
       </div>
-      <div class="maplegend" id="maplegend"></div>
-    </div>
+      <div class="margin">
+        <div class="maplegend" id="maplegend"></div>
+        <div class="scalebar" id="scalebar"></div>
+      </div>
+      <figcaption class="figcap">Lines run from each town to the start at Battle Point Park. Hover over or tap a town to see how many runners came from it.</figcaption>
+    </figure>
 
     <aside class="rail" aria-live="polite">
       <div class="rail-head">
@@ -215,11 +233,11 @@ td.n { text-align: right; font-family: var(--font-data); }
         <div class="sec-label">Spots filled</div>
         <div class="caps" id="caps"></div>
       </div>
-      <div class="regions-wrap" style="display:grid;gap:8px">
+      <div style="display:grid;gap:8px">
         <div class="sec-label">Where they live</div>
         <div class="regions" id="regions"></div>
       </div>
-      <div style="display:grid;gap:8px">
+      <div style="display:grid;gap:4px">
         <div class="sec-label">Top towns</div>
         <ul class="towns" id="towns"></ul>
       </div>
@@ -232,21 +250,21 @@ td.n { text-align: right; font-family: var(--font-data); }
 
   <section class="strip-sec">
     <h2>Every trip, by distance and year</h2>
-    <p>One dot per entrant, on a log scale so the island and the far travelers both fit. The black tick marks the median trip. Rows outside your current filter are dimmed.<span id="strip-note"></span></p>
+    <p>One dot per runner, on a log scale so the island and the far travelers both fit. The black tick is the median trip. Rows outside your filter fade back.<span id="strip-note"></span></p>
     <div class="strip-scroll"><svg id="strip" role="img" aria-label="Travel distance of every entrant by race and year"></svg></div>
   </section>
 
   <div class="notes">
     <section>
-      <h2>What the data says</h2>
+      <h2>Findings</h2>
       <ul id="findings"></ul>
     </section>
     <section>
-      <h2>About the data</h2>
+      <h2>How the numbers were made</h2>
       <ul class="small">
         <li>Source: UltraSignup results for each BURT 100 distance. 2023 was a 55K-only year on UltraSignup, and no earlier editions are listed.</li>
         <li>An entrant is anyone in the results: finishers, DNFs and, unless you turn them off, registered non-starters.</li>
-        <li>Hometown is what the runner entered at registration. Distances run from the town's center to Battle Point Park, so island runners all show about 3 miles.</li>
+        <li>Hometown is what the runner entered at registration. Distances run from the town's center to Battle Point Park, so island runners all show about 4 miles.</li>
         <li id="note-upcoming" hidden></li>
         <li>Counts are by town only. No runner names are shown.</li>
       </ul>
@@ -346,14 +364,26 @@ svg.insert("rect", ":first-child").attr("width", W).attr("height", H).attr("fill
 
 const countries = topojson.feature(DATA.world, DATA.world.objects.countries).features.filter(f => f.id !== "840");
 const states = topojson.feature(DATA.us, DATA.us.objects.states).features;
-gWorld.selectAll(".c").data(countries).join("path").attr("class", "land").attr("d", path);
-gWorld.selectAll(".s").data(states).join("path").attr("class", "land").attr("d", path);
-gWorld.selectAll(".wa").data(DATA.wa.features).join("path")
-  .attr("class", d => "land" + (d.properties.fips === "035" ? " home" : "")).attr("d", path);
+gWorld.selectAll(".c").data(countries).join("path").attr("class", "land far").attr("d", path);
+gWorld.selectAll(".s").data(states).join("path").attr("class", "land far").attr("d", path);
+gWorld.selectAll(".wa").data(DATA.wa.features).join("path").attr("class", "land wa").attr("d", path);
+gWorld.append("path").attr("class", "boundary").attr("d", path(DATA.waLines.borders));
+gWorld.append("path").attr("class", "shore").attr("d", path(DATA.waLines.coast));
+
+// Water names, set in spaced italic as on a USGS quad. Each shows in the views it suits.
+const WATER = [
+  {name: "Puget Sound", at: [-122.445, 47.815], views: ["puget"], big: true},
+  {name: "Hood Canal", at: [-122.86, 47.665], views: ["puget"], rotate: -62},
+  {name: "Admiralty Inlet", at: [-122.62, 48.04], views: ["puget"]},
+  {name: "Strait of Juan de Fuca", at: [-123.55, 48.21], views: ["nw"], rotate: -7},
+  {name: "Pacific Ocean", at: [-127.2, 46.4], views: ["nw"], big: true},
+  {name: "Pacific Ocean", at: [-140, 33], views: ["na"], big: true},
+];
+const gWater = svg.insert("g", () => gTrips.node());
 
 const startXY = proj(RACE);
 gStart.append("path").attr("class", "start-mark").attr("d", d3.symbol(d3.symbolStar, 210)());
-gStart.append("text").attr("class", "start-label").attr("x", 12).attr("y", -10).text("START · Battle Point Park");
+const startLabel = gStart.append("text").attr("class", "start-label").attr("x", 12).attr("y", -10).text("Battle Point Park");
 
 const zoom = d3.zoom().scaleExtent([1, 600]).translateExtent([[-W, -H], [2 * W, 2 * H]])
   .on("zoom", ev => { zt = ev.transform; placeMarks(); })
@@ -397,9 +427,9 @@ function aggregate(rows) {
 }
 
 function townTip(t) {
-  const dists = DISTS.filter(d => t.byDist[d]).map(d => `${d} ${t.byDist[d]}`).join(" · ");
-  const st = ["finished", "DNF", "DNS", "registered"].filter(s => t.byStatus[s]).map(s => `${t.byStatus[s]} ${s === "finished" ? "finished" : s}`).join(" · ");
-  return `<b>${t.town}, ${t.st}</b><br>${t.n} entrant${t.n > 1 ? "s" : ""} · ${fmtMi(t.mi)} mi to start<br>` +
+  const dists = DISTS.filter(d => t.byDist[d]).map(d => `${d} ${t.byDist[d]}`).join(", ");
+  const st = ["finished", "DNF", "DNS", "registered"].filter(s => t.byStatus[s]).map(s => `${t.byStatus[s]} ${s}`).join(", ");
+  return `<b>${t.town}, ${t.st}</b><br>${t.n} entrant${t.n > 1 ? "s" : ""}, ${fmtMi(t.mi)} mi from the start<br>` +
     `<span class="m">${dists}<br>${st}</span>`;
 }
 
@@ -417,8 +447,37 @@ function drawMap(rows) {
   placeMarks();
 }
 
+function nearestView() {
+  const lk = Math.log(zt.k);
+  return VIEW_ORDER.reduce((a, b) => Math.abs(Math.log(viewTransform(b).k) - lk) < Math.abs(Math.log(viewTransform(a).k) - lk) ? b : a);
+}
+function placeWater() {
+  const v = nearestView();
+  gWater.selectAll("text").data(WATER.filter(w => w.views.includes(v)), w => w.name + w.views)
+    .join("text").attr("class", w => "water-label" + (w.big ? " big" : "")).attr("text-anchor", "middle")
+    .attr("transform", w => `translate(${zt.apply(proj(w.at))}) rotate(${w.rotate || 0})`).text(w => w.name);
+}
+// Scale bar for the map's center latitude (Mercator scale changes with latitude).
+function drawScale() {
+  const el = document.getElementById("scalebar"), node = svg.node();
+  if (!node.clientWidth) return;
+  const cssPerUnit = node.clientWidth / W;
+  const a = proj.invert(zt.invert([W / 2, H / 2])), b = proj.invert(zt.invert([W / 2 + 100, H / 2]));
+  const miPer100 = d3.geoDistance(a, b) * 3958.8;            // miles per 100 map units
+  const target = 120 / cssPerUnit / 100 * miPer100;           // miles in ~120 CSS px
+  const nice = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000].reduce((p, c) => (c <= target ? c : p), 1);
+  const px = nice / miPer100 * 100 * cssPerUnit;
+  const half = px / 2;
+  el.innerHTML = `<svg width="${Math.ceil(px) + 2}" height="22" aria-label="Scale: ${nice} miles">` +
+    `<rect x="1" y="12" width="${half}" height="5" fill="var(--ink)"></rect>` +
+    `<rect x="${1 + half}" y="12" width="${half}" height="5" fill="var(--paper)"></rect>` +
+    `<text x="1" y="9">0</text><text x="${1 + half}" y="9" text-anchor="middle">${d3.format(",")(nice / 2)}</text>` +
+    `<text x="${1 + px}" y="9" text-anchor="end">${d3.format(",")(nice)} mi</text></svg>`;
+}
+
 function placeMarks() {
   gWorld.attr("transform", zt); gTrips.attr("transform", zt);
+  placeWater(); drawScale();
   gStart.attr("transform", `translate(${zt.apply(startXY)})`);
   const pos = d => zt.apply(proj([d.lon, d.lat]));
   gTowns.selectAll("circle").attr("cx", d => pos(d)[0]).attr("cy", d => pos(d)[1]);
@@ -431,7 +490,7 @@ function placeMarks() {
       const t = viewTransform(k);
       return out.every(d => { const [x, y] = t.apply(proj([d.lon, d.lat])); return x >= 0 && x <= W && y >= 0 && y <= H; });
     });
-    off.innerHTML = `${nOut} entrant${nOut > 1 ? "s" : ""} from beyond this view. ` +
+    off.innerHTML = `${nOut} entrant${nOut > 1 ? "s are" : " is"} outside this view. ` +
       (next ? `<button type="button" class="linkbtn" id="zoomout">Show ${VIEWS[next].label}</button>` : "");
     off.hidden = false;
     const btn = document.getElementById("zoomout");
@@ -441,7 +500,7 @@ function placeMarks() {
   const cands = towns.filter((d, i) => (d.n >= 2 || i < 8) && inView(d));
   // Obstacles: the start label, then every circle, so labels never sit on a dot.
   const [sx, sy] = zt.apply(startXY);
-  const placed = [[sx - 8, sy - 22, sx + 12 + 172, sy + 8]];
+  const placed = [[sx - 8, sy - 22, sx + 14 + startLabel.node().getComputedTextLength(), sy + 8]];
   for (const d of towns) { const [x, y] = pos(d), r = rScale(d.n); placed.push([x - r, y - r, x + r, y + r]); }
   const hits = box => placed.some(b => !(box[2] < b[0] || box[0] > b[2] || box[3] < b[1] || box[1] > b[3]));
   const labels = [];
@@ -464,7 +523,7 @@ function placeMarks() {
 function drawLegend() {
   const el = document.getElementById("maplegend");
   el.innerHTML = REGIONS.map(r => `<div class="row"><span class="sw" style="background:${regionVar(r)}"></span>${REGION_SHORT[r]}</div>`).join("") +
-    `<div class="row" style="color:var(--muted)">Circle size = entrants per town · ★ start/finish</div>`;
+    `<div class="row" style="color:var(--muted)">Bigger circles mean more entrants. ★ marks the start and finish.</div>`;
 }
 
 /* ---------- stats rail ---------- */
@@ -475,13 +534,13 @@ function drawRail(rows) {
   const yearTxt = state.year === "all" ? `${YEARS[0]}–${YEARS[YEARS.length - 1]}`
     : isUp ? `${state.year} so far` : state.year;
   const distTxt = state.dist === "All" ? "All distances" : state.dist;
-  document.getElementById("rail-title").textContent = `${yearTxt} · ${distTxt}`;
+  document.getElementById("rail-title").textContent = `${distTxt}, ${yearTxt}`;
   const raced = rows.filter(r => r.status !== "registered");
   const starters = raced.filter(r => r.status !== "DNS").length, fin = raced.filter(r => r.status === "finished").length;
   const reg = rows.length - raced.length;
   document.getElementById("rail-sub").textContent = isUp
-    ? `Registered as of ${fmtDate(UP.asOf)} · race day ${fmtDate(UP.raceDate)}`
-    : rows.length ? `${starters} started · ${fin} finished` + (reg ? ` · ${reg} registered for ${UP_YEAR}` : "")
+    ? `Registrations as of ${fmtDate(UP.asOf)}. Race day is ${fmtDate(UP.raceDate)}.`
+    : rows.length ? `${starters} started, ${fin} finished` + (reg ? `, ${reg} registered for ${UP_YEAR}` : "")
     : (state.year === 2023 ? "2023 had only a 55K on UltraSignup." : "No entrants for this filter.");
   const capsWrap = document.getElementById("caps-wrap");
   capsWrap.hidden = !isUp;
@@ -507,10 +566,10 @@ function drawRail(rows) {
   document.getElementById("regions").innerHTML = REGIONS.map(r => {
     const n = rows.filter(x => x.region === r).length, p = pct(n, rows.length);
     return `<div class="reg"><span>${REGION_SHORT[r]}</span><span class="bar"><i style="width:${p}%;background:${regionVar(r)}"></i></span>` +
-      `<span class="v">${p}% · ${n}</span></div>`;
+      `<span class="v">${p}% (${n})</span></div>`;
   }).join("");
   document.getElementById("towns").innerHTML = t.slice(0, 7).map(x =>
-    `<li><span>${x.town}, ${x.st}</span><span>${x.n} · ${fmtMi(x.mi)} mi</span></li>`).join("") || `<li><span>None</span><span></span></li>`;
+    `<li><span>${x.town}, ${x.st}</span><span>${x.n} (${fmtMi(x.mi)} mi)</span></li>`).join("") || `<li><span>None</span><span></span></li>`;
   document.getElementById("town-table").innerHTML =
     `<thead><tr><th>Town</th><th>Region</th><th class="n">Entrants</th><th class="n">Miles</th></tr></thead><tbody>` +
     t.map(x => `<tr><td>${x.town}, ${x.st}</td><td>${REGION_SHORT[x.region]}</td><td class="n">${x.n}</td><td class="n">${fmtMi(x.mi)}</td></tr>`).join("") + "</tbody>";
@@ -569,7 +628,7 @@ function drawStrip() {
     g.selectAll("circle").data(row.rs).join("circle").attr("class", "dot")
       .attr("cx", r => x(Math.max(1, r.mi))).attr("cy", (r, j) => row.cy + (hash(ri + 1, j + 1) - 0.5) * (rowH - 12))
       .attr("r", 4.5).attr("fill", r => regionVar(r.region))
-      .on("pointermove", (ev, r) => showTip(ev, `<b>${r.town}, ${r.st}</b><br>${fmtMi(r.mi)} mi · ${r.d} ${r.y}<br><span class="m">${r.status === "finished" ? "Finished" : r.status === "registered" ? "Registered" : r.status}</span>`))
+      .on("pointermove", (ev, r) => showTip(ev, `<b>${r.town}, ${r.st}</b><br>${fmtMi(r.mi)} mi, ${r.d} ${r.y}<br><span class="m">${r.status === "finished" ? "Finished" : r.status === "registered" ? "Registered" : r.status}</span>`))
       .on("pointerleave", hideTip);
     const med = median(row.rs.map(r => r.mi));
     g.append("line").attr("class", "med").attr("x1", x(med)).attr("x2", x(med)).attr("y1", row.cy - rowH / 2 + 3).attr("y2", row.cy + rowH / 2 - 3);
@@ -578,6 +637,9 @@ function drawStrip() {
 }
 
 /* ---------- findings ---------- */
+// "a", "a and b", "a, b and c"
+const listAnd = xs => xs.length < 2 ? (xs[0] || "") : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1];
+
 function drawFindings() {
   const all = DATA.runners.filter(r => r.y !== UP_YEAR);
   const med = d => median(all.filter(r => r.d === d).map(r => r.mi));
@@ -586,22 +648,33 @@ function drawFindings() {
   const byYear = DONE_YEARS.map(y => { const rs = all.filter(r => r.y === y); return `${y}: ${rs.length} entrants, ${localShare(rs)}% Kitsap`; });
   const rep = DATA.repeats;
   const repLocal = (rep.byRegion["Bainbridge Island"] || 0) + (rep.byRegion["Kitsap County"] || 0);
+  const [y0, y1] = [DONE_YEARS[0], DONE_YEARS[DONE_YEARS.length - 1]];
+  const inYear = y => all.filter(r => r.y === y);
+  const shares = DONE_YEARS.map(y => localShare(inYear(y)) + "%");
   const items = [
-    `<b>The 100-miler draws from much farther away.</b> Median trip across ${DONE_YEARS[0]}–${DONE_YEARS[DONE_YEARS.length - 1]}: ${fmtMi(med("100M"))} mi for the 100M, ${fmtMi(med("110K"))} mi for the 110K, ${fmtMi(med("55K"))} mi for the 55K. Islanders are ${islandShare("55K")}% of 55K entrants but ${islandShare("100M")}% of 100M entrants.`,
-    `<b>The field grew and spread out.</b> ${byYear.join("; ")} (Kitsap here includes Bainbridge). The 2023 edition was a small, mostly island 55K.`,
-    `<b>Repeat runners are mostly local.</b> ${rep.repeat} of ${rep.unique} distinct runners entered in more than one year, and ${repLocal} of those ${rep.repeat} live in Kitsap County.`,
+    `From ${y0} to ${y1}, the median 100-mile entrant lived ${fmtMi(med("100M"))} miles from the start. ` +
+      `For the 110K it was ${fmtMi(med("110K"))} miles, and for the 55K ${fmtMi(med("55K"))}. ` +
+      `Islanders made up ${islandShare("55K")}% of 55K entrants but only ${islandShare("100M")}% of the 100-mile field.`,
+    `The race grew from ${inYear(y0).length} entrants in ${y0} to ${inYear(y1).length} in ${y1}. ` +
+      `The share living in Kitsap County, Bainbridge included, was ${shares[0]} in ${y0}, then ${listAnd(shares.slice(1))}.`,
+    `Between ${y0} and ${y1}, ${rep.unique} people entered. Of those, ${rep.repeat} came back for at least one more year, ` +
+      `and ${repLocal} of the ${rep.repeat} live in Kitsap County.`,
   ];
   if (UP) {
     const reg = DATA.runners.filter(r => r.y === UP_YEAR);
-    const fill = DISTS.filter(d => UP.caps[d]).map(d => `${d} ${reg.filter(r => r.d === d).length} of ${UP.caps[d]}`).join(", ");
-    items.push(`<b>${UP_YEAR} so far.</b> ${reg.length} registered as of ${fmtDate(UP.asOf)} (${fill}). ` +
-      `${UP.returning} of them have run BURT before, and ${pct(reg.filter(r => r.region === "Bainbridge Island").length, reg.length)}% live on the island.`);
-    document.getElementById("strip-note").textContent = ` * ${UP_YEAR} shows registrations as of ${fmtDate(UP.asOf)}.`;
+    const fill = listAnd(DISTS.filter(d => UP.caps[d]).map((d, i) =>
+      `${reg.filter(r => r.d === d).length} of ${UP.caps[d]} ${i ? "" : "spots "}in the ${d === "100M" ? "100-miler" : d}`));
+    items.push(`As of ${fmtDate(UP.asOf, {month: "long", day: "numeric"})}, ${reg.length} people have signed up for ${UP_YEAR}: ${fill}. ` +
+      `Of those, ${UP.returning} have run BURT before, and ${pct(reg.filter(r => r.region === "Bainbridge Island").length, reg.length)}% live on the island.`);
+    document.getElementById("strip-note").textContent = ` *${UP_YEAR} shows registrations as of ${fmtDate(UP.asOf)}.`;
     const note = document.getElementById("note-upcoming");
-    note.textContent = `${UP_YEAR} comes from UltraSignup's entrant list as of ${fmtDate(UP.asOf)}. It has no DNF or DNS data. It's included in "All years" but not in the findings above, which cover finished races. Results replace it after the race.` +
-      (UP.unmapped ? ` ${UP.unmapped} registrant${UP.unmapped > 1 ? "s have hometowns" : " has a hometown"} I couldn't place on the map yet.` : "");
+    note.textContent = `${UP_YEAR} comes from UltraSignup's entrant list as of ${fmtDate(UP.asOf)}. It has no DNF or DNS data. It's included in "All years" but not in the findings, which cover finished races only. Results replace it after the race.` +
+      (UP.unmapped ? ` ${UP.unmapped} registrant${UP.unmapped > 1 ? "s' hometowns aren't" : "'s hometown isn't"} on the map yet.` : "");
     note.hidden = false;
   }
+  const done = DATA.runners.filter(r => r.y !== UP_YEAR), far = done.reduce((a, b) => (b.mi > a.mi ? b : a));
+  document.getElementById("lede-fact").textContent =
+    ` Half of all entrants live within ${Math.round(median(done.map(r => r.mi)))} miles of it. The longest trip was ${d3.format(",")(Math.round(far.mi))} miles, from ${far.town}, ${far.st}.`;
   document.getElementById("findings").innerHTML = items.map(t => `<li>${t}</li>`).join("");
 }
 

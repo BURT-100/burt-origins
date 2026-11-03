@@ -13,3 +13,4 @@ data/unmatched.csv
 data/ref/us_places.tsv
 data/ref/cb_county_500k.zip
 .burt_key
+preview/
